@@ -2,14 +2,14 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1a365d">
 <title>Visual Keto Log</title>
 <style>
 :root{--bg:#f0f4f8;--card:#fff;--text:#1a202c;--muted:#718096;--primary:#2b6cb0;--green:#38a169;--yellow:#d69e2e;--orange:#dd6b20;--red:#e53e3e;--border:#e2e8f0}
 [data-theme=dark]{--bg:#1a202c;--card:#2d3748;--text:#f7fafc;--muted:#a0aec0;--border:#4a5568}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);padding-bottom:90px;font-size:14px}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);padding-bottom:calc(90px + env(safe-area-inset-bottom));font-size:14px}
 header{background:linear-gradient(135deg,#1a365d,#2b6cb0);color:#fff;padding:12px 14px;position:sticky;top:0;z-index:40}
 .header-row{display:flex;justify-content:space-between;align-items:center}
 h1{font-size:16px;font-weight:700}
@@ -25,16 +25,18 @@ h1{font-size:16px;font-weight:700}
 .recent-info{font-size:11px;color:var(--muted);margin-top:4px}
 .goal-row{display:flex;justify-content:space-between;font-size:12px;margin-top:6px}
 .goal-bar{height:5px;background:var(--border);border-radius:99px;margin-top:4px;overflow:hidden}
-.goal-fill{height:100%;background:var(--primary)}
+.goal-fill{height:100%;background:var(--green);transition:width .25s,background .25s}
 .card{background:var(--card);border-radius:10px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--border)}
 .card h2{font-size:14px;font-weight:700;margin-bottom:2px}
 .card .desc{font-size:11px;color:var(--muted);margin-bottom:6px}
 .portion-btns{display:flex;gap:4px}
-.portion-btn{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 2px;font-size:10.5px;font-weight:600;color:var(--text);cursor:pointer;text-align:center}
+.portion-btn{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 2px;font-size:10.5px;font-weight:600;color:var(--text);cursor:pointer;text-align:center;transition:background .1s,transform .1s}
 .portion-btn.active{background:rgba(66,153,225,.15);border-color:var(--primary);color:var(--primary)}
+.portion-btn:active{transform:scale(.94)}
+.btn:active{transform:scale(.97)}
 .food-row{background:var(--card);border-radius:9px;padding:7px 9px;margin-bottom:6px;border:1px solid var(--border)}
 .food-row.custom-row{border-left:3px solid #805ad5}
-.food-row-head{display:flex;align-items:baseline;gap:6px;margin-bottom:5px}
+.food-row-head{display:flex;align-items:baseline;gap:6px;justify-content:space-between;margin-bottom:5px}
 .food-name{font-size:12.5px;font-weight:700;white-space:nowrap}
 .food-desc{font-size:10px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hide-btn{background:none;border:none;color:var(--muted);font-size:15px;font-weight:700;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0}
@@ -50,12 +52,10 @@ h1{font-size:16px;font-weight:700}
 .toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,10px);background:#1a202c;color:#fff;padding:8px 16px;border-radius:99px;font-size:12px;font-weight:600;opacity:0;transition:opacity .25s,transform .25s;z-index:100;box-shadow:0 4px 14px rgba(0,0,0,.25);max-width:80%;text-align:center;pointer-events:none}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .log-entry{background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;border:1px solid var(--border)}
-.note-input{width:100%;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);font-size:13px;margin-top:6px}
-.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);padding:8px 12px 12px;box-shadow:0 -3px 15px rgba(0,0,0,.08);border-radius:14px 14px 0 0;z-index:50;display:flex;gap:8px;align-items:center}
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);padding:8px 12px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -3px 15px rgba(0,0,0,.08);border-radius:14px 14px 0 0;z-index:50;display:flex;gap:8px;align-items:center}
 .total-block{flex:1}
 .total-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted)}
-.total-value{font-size:22px;font-weight:800}
-.total-value.green{color:var(--green)}.total-value.yellow{color:var(--yellow)}.total-value.orange{color:var(--orange)}.total-value.red{color:var(--red)}
+.total-value{font-size:22px;font-weight:800;color:var(--text)}
 .btn{border:none;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer}
 .btn-primary{background:var(--primary);color:#fff}
 .btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}
@@ -104,16 +104,13 @@ select,input[type=number],input[type=text]{width:100%;padding:8px;border:1px sol
       <summary>0g items 🥩🐟🥚 (tik voor meer)</summary>
       <p class="desc">Vlees, vis, ei, kaas, ui, sla, broccoli, boter, olie. Onbeperkt, hoeft niet gelogd te worden.</p>
     </details>
+
+    <input type="text" id="mealNote" placeholder="+ Notitie bij deze maaltijd (optioneel)" style="margin-bottom:4px">
   </div>
 
   <div id="panel-log" class="panel">
     <div id="logLimitMsg"></div>
-    <div class="card">
-      <h2>Huidige selectie loggen</h2>
-      <input type="text" class="note-input" id="mealNote" placeholder="Notitie (optioneel)">
-      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="logMeal()">Log maaltijd</button>
-    </div>
-    <div style="margin:8px 0">
+    <div style="margin-bottom:8px">
       <button class="btn btn-secondary" style="width:100%" onclick="exportLog()" id="exportBtn">Exporteer log</button>
     </div>
     <div id="logList"></div>
@@ -173,11 +170,11 @@ select,input[type=number],input[type=text]{width:100%;padding:8px;border:1px sol
 
 <div class="bottom-bar">
   <div class="total-block">
-    <div class="total-label">Totaal vandaag</div>
-    <div class="total-value green" id="total">0g</div>
+    <div class="total-label">Deze maaltijd</div>
+    <div class="total-value" id="total">0g</div>
   </div>
   <button class="btn btn-secondary" onclick="resetToday()">Wissen</button>
-  <button class="btn btn-primary" onclick="goToLog()">Loggen</button>
+  <button class="btn btn-primary" onclick="logMeal()">Loggen</button>
 </div>
 
 <script>
@@ -284,6 +281,14 @@ function init() {
 
     document.getElementById('foodSearch').addEventListener('input', renderFoods);
 
+    document.getElementById('mealNote').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') logMeal();
+    });
+
+    document.getElementById('customName').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') addCustomFood();
+    });
+
     updateCountrySelect();
     updateProUI();
     updateHiddenFoodsUI();
@@ -328,7 +333,7 @@ function renderCustomSection() {
       btns += '<button class="portion-btn' + active + '" data-carbs="' + p.carbs + '">' + p.label + '</button>';
     });
     html += '<div class="food-row custom-row">' +
-      '<div class="food-row-head"><span class="food-name">' + f.name + '</span><span class="food-desc"></span>' +
+      '<div class="food-row-head"><span class="food-name">' + f.name + '</span>' +
       '<button class="hide-btn" onclick="removeCustom(\'' + f.id + '\')" title="Verwijderen">×</button></div>' +
       '<div class="portion-btns" data-id="' + f.id + '">' + btns + '</div></div>';
   });
@@ -533,6 +538,10 @@ function changeCountry() {
   updateCustomLimitMsg();
 }
 
+function sumValues(obj) {
+  return Object.keys(obj).reduce((s, k) => s + (obj[k] || 0), 0);
+}
+
 function getLast7DaysTotal() {
   try {
     const log = JSON.parse(localStorage.getItem('ketoLog') || '[]');
@@ -543,14 +552,20 @@ function getLast7DaysTotal() {
   } catch(e) { return 0; }
 }
 
-function calculate() {
-  let today = 0;
-  for (const k in values) today += (values[k] || 0);
-  const last7 = getLast7DaysTotal() + today;
+function getTodayLoggedTotal() {
+  try {
+    const log = JSON.parse(localStorage.getItem('ketoLog') || '[]');
+    const todayStr = new Date().toISOString().slice(0,10);
+    return log.filter(e => e.date === todayStr).reduce((s,e) => s + (e.total||0), 0);
+  } catch(e) { return 0; }
+}
 
-  const totalEl = document.getElementById('total');
-  totalEl.textContent = today + 'g';
-  totalEl.className = 'total-value ' + (today<=20?'green':today<=50?'yellow':today<=80?'orange':'red');
+function calculate() {
+  const mealTotal = sumValues(values);
+  const todayTotal = getTodayLoggedTotal() + mealTotal;
+  const last7 = getLast7DaysTotal() + mealTotal;
+
+  document.getElementById('total').textContent = mealTotal + 'g';
 
   document.getElementById('ketosisMarker').style.left = Math.min(last7 / 150 * 100, 100) + '%';
   document.getElementById('recentInfo').textContent = 'Laatste 7 dagen (incl. vandaag): ' + last7 + 'g';
@@ -561,15 +576,16 @@ function calculate() {
   else if (last7 <= 120) { status.textContent = 'Waarschijnlijk uit ketose'; status.style.color = 'var(--orange)'; }
   else { status.textContent = 'Duidelijk uit ketose'; status.style.color = 'var(--red)'; }
 
-  document.getElementById('goalText').textContent = today + ' / ' + carbGoal + 'g';
-  document.getElementById('goalFill').style.width = Math.min(today / carbGoal * 100, 100) + '%';
+  document.getElementById('goalText').textContent = todayTotal + ' / ' + carbGoal + 'g';
+  const goalFill = document.getElementById('goalFill');
+  goalFill.style.width = Math.min(todayTotal / carbGoal * 100, 100) + '%';
+  goalFill.style.background = todayTotal <= carbGoal * 0.7 ? 'var(--green)' : todayTotal <= carbGoal ? 'var(--yellow)' : 'var(--red)';
 
   updateSelectedChips();
 }
 
 function logMeal() {
-  let total = 0;
-  for (const k in values) total += (values[k] || 0);
+  const total = sumValues(values);
   if (total === 0) { toast('Nog niets geselecteerd'); return; }
 
   const entry = {
@@ -593,9 +609,11 @@ function logMeal() {
 
   localStorage.setItem('ketoLog', JSON.stringify(log));
   document.getElementById('mealNote').value = '';
+  values = {};
+  renderAllFoods();
   loadLog();
   calculate();
-  toast('Gelogd ✓');
+  toast('Gelogd ✓ (' + total + 'g)');
 }
 
 function loadLog() {
@@ -683,10 +701,6 @@ function clearAllData() {
     localStorage.clear();
     location.reload();
   }
-}
-
-function goToLog() {
-  document.querySelector('.tab[data-tab="log"]').click();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
