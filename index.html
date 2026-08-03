@@ -29,10 +29,26 @@ h1{font-size:16px;font-weight:700}
 .card{background:var(--card);border-radius:10px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--border)}
 .card h2{font-size:14px;font-weight:700;margin-bottom:2px}
 .card .desc{font-size:11px;color:var(--muted);margin-bottom:6px}
-.portion-btns{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-.portion-btn{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 4px;font-size:11px;font-weight:600;color:var(--text);cursor:pointer}
+.portion-btns{display:flex;gap:4px}
+.portion-btn{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 2px;font-size:10.5px;font-weight:600;color:var(--text);cursor:pointer;text-align:center}
 .portion-btn.active{background:rgba(66,153,225,.15);border-color:var(--primary);color:var(--primary)}
-.free-card{border-left:3px solid var(--green)}
+.food-row{background:var(--card);border-radius:9px;padding:7px 9px;margin-bottom:6px;border:1px solid var(--border)}
+.food-row.custom-row{border-left:3px solid #805ad5}
+.food-row-head{display:flex;align-items:baseline;gap:6px;margin-bottom:5px}
+.food-name{font-size:12.5px;font-weight:700;white-space:nowrap}
+.food-desc{font-size:10px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hide-btn{background:none;border:none;color:var(--muted);font-size:15px;font-weight:700;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0}
+.hide-btn:hover{color:var(--red)}
+.selected-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.chip{display:inline-flex;align-items:center;gap:3px;background:rgba(43,108,176,.12);color:var(--primary);border-radius:99px;padding:4px 4px 4px 10px;font-size:11px;font-weight:600}
+.chip b{font-weight:800}
+.chip-x{background:none;border:none;color:var(--primary);font-size:13px;cursor:pointer;padding:0 5px;line-height:1}
+.free-card-details{background:var(--card);border-radius:10px;padding:8px 12px;margin-bottom:8px;border:1px solid var(--border);border-left:3px solid var(--green);font-size:12px}
+.free-card-details summary{cursor:pointer;font-weight:700;font-size:13px;list-style:none}
+.free-card-details summary::-webkit-details-marker{display:none}
+.free-card-details[open] summary{margin-bottom:4px}
+.toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,10px);background:#1a202c;color:#fff;padding:8px 16px;border-radius:99px;font-size:12px;font-weight:600;opacity:0;transition:opacity .25s,transform .25s;z-index:100;box-shadow:0 4px 14px rgba(0,0,0,.25);max-width:80%;text-align:center;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
 .log-entry{background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;border:1px solid var(--border)}
 .note-input{width:100%;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);font-size:13px;margin-top:6px}
 .bottom-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);padding:8px 12px 12px;box-shadow:0 -3px 15px rgba(0,0,0,.08);border-radius:14px 14px 0 0;z-index:50;display:flex;gap:8px;align-items:center}
@@ -78,13 +94,16 @@ select,input[type=number],input[type=text]{width:100%;padding:8px;border:1px sol
       <div class="goal-bar"><div class="goal-fill" id="goalFill" style="width:0%"></div></div>
     </div>
 
+    <div id="selectedChips" class="selected-chips" style="display:none"></div>
+    <input type="text" id="foodSearch" placeholder="🔍 Zoek gerecht..." style="margin-bottom:8px">
+
     <div id="customSection"></div>
     <div id="foodList"></div>
 
-    <div class="card free-card">
-      <h2>0g items 🥩🐟🥚</h2>
-      <p class="desc">Vlees, vis, ei, kaas, ui, sla, broccoli, boter, olie. Onbeperkt.</p>
-    </div>
+    <details class="free-card-details">
+      <summary>0g items 🥩🐟🥚 (tik voor meer)</summary>
+      <p class="desc">Vlees, vis, ei, kaas, ui, sla, broccoli, boter, olie. Onbeperkt, hoeft niet gelogd te worden.</p>
+    </details>
   </div>
 
   <div id="panel-log" class="panel">
@@ -139,10 +158,16 @@ select,input[type=number],input[type=text]{width:100%;padding:8px;border:1px sol
       <button class="btn btn-secondary" style="width:100%" onclick="openSupport()">Betaalpagina</button>
     </div>
 
+    <div class="card" id="hiddenFoodsCard" style="display:none">
+      <h2 style="margin-bottom:6px">Verborgen standaard items (Pro)</h2>
+      <p class="desc">Zo bouw je jouw eigen samengestelde lijst: verberg wat je niet nodig hebt, tik op ↺ om terug te halen.</p>
+      <div id="hiddenFoodsList" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+
     <div class="card">
       <button class="btn btn-secondary" style="width:100%" onclick="clearAllData()">Alles wissen</button>
     </div>
-    <div class="version">Visual Keto Log · v2.1</div>
+    <div class="version">Visual Keto Log · v2.2</div>
   </div>
 </div>
 
@@ -183,7 +208,23 @@ let currentCountry = 'ba';
 let carbGoal = 30;
 let values = {};
 let customFoods = {ba: [], nl: []};
+let hiddenFoods = {ba: [], nl: []};
 const SUPPORT_URL = 'https://ko-fi.com/';
+
+let toastTimer = null;
+function toast(msg) {
+  let el = document.getElementById('toastEl');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toastEl';
+    el.className = 'toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  clearTimeout(toastTimer);
+  requestAnimationFrame(() => el.classList.add('show'));
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
 
 function init() {
   try {
@@ -197,6 +238,10 @@ function init() {
     try {
       customFoods = JSON.parse(localStorage.getItem('ketoCustom') || '{"ba":[],"nl":[]}');
     } catch(e) { customFoods = {ba:[], nl:[]}; }
+
+    try {
+      hiddenFoods = JSON.parse(localStorage.getItem('ketoHidden') || '{"ba":[],"nl":[]}');
+    } catch(e) { hiddenFoods = {ba:[], nl:[]}; }
 
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', function() {
@@ -231,8 +276,17 @@ function init() {
       calculate();
     });
 
+    document.getElementById('selectedChips').addEventListener('click', function(e) {
+      const btn = e.target.closest('.chip-x');
+      if (!btn) return;
+      resetPortion(btn.dataset.id);
+    });
+
+    document.getElementById('foodSearch').addEventListener('input', renderFoods);
+
     updateCountrySelect();
     updateProUI();
+    updateHiddenFoodsUI();
     renderAllFoods();
     calculate();
     loadLog();
@@ -246,6 +300,11 @@ function getAllFoods() {
   const base = BASE_FOODS[currentCountry] || [];
   const customs = customFoods[currentCountry] || [];
   return customs.concat(base);
+}
+
+function getFoodName(id) {
+  const f = getAllFoods().find(x => x.id === id);
+  return f ? f.name : id;
 }
 
 function renderAllFoods() {
@@ -268,8 +327,9 @@ function renderCustomSection() {
       const active = values[f.id] === p.carbs ? ' active' : '';
       btns += '<button class="portion-btn' + active + '" data-carbs="' + p.carbs + '">' + p.label + '</button>';
     });
-    html += '<div class="card" style="border-left:3px solid #805ad5">' +
-      '<h2>' + f.name + ' <button class="btn btn-small btn-secondary" onclick="removeCustom(\'' + f.id + '\')" style="float:right">×</button></h2>' +
+    html += '<div class="food-row custom-row">' +
+      '<div class="food-row-head"><span class="food-name">' + f.name + '</span><span class="food-desc"></span>' +
+      '<button class="hide-btn" onclick="removeCustom(\'' + f.id + '\')" title="Verwijderen">×</button></div>' +
       '<div class="portion-btns" data-id="' + f.id + '">' + btns + '</div></div>';
   });
   section.innerHTML = html;
@@ -277,8 +337,17 @@ function renderCustomSection() {
 
 function renderFoods() {
   const list = document.getElementById('foodList');
-  list.innerHTML = '';
-  const foods = BASE_FOODS[currentCountry] || [];
+  const hidden = hiddenFoods[currentCountry] || [];
+  const term = (document.getElementById('foodSearch').value || '').toLowerCase().trim();
+  let foods = (BASE_FOODS[currentCountry] || []).filter(f => hidden.indexOf(f.id) === -1);
+  if (term) {
+    foods = foods.filter(f => f.name.toLowerCase().indexOf(term) !== -1 || f.desc.toLowerCase().indexOf(term) !== -1);
+  }
+  if (!foods.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:16px;font-size:12px">Geen gerechten gevonden</div>';
+    return;
+  }
+  let html = '';
   foods.forEach(function(f) {
     if (values[f.id] === undefined) values[f.id] = 0;
     let btns = '';
@@ -286,20 +355,80 @@ function renderFoods() {
       const active = values[f.id] === p.carbs ? ' active' : '';
       btns += '<button class="portion-btn' + active + '" data-carbs="' + p.carbs + '">' + p.label + '</button>';
     });
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = '<h2>' + f.name + '</h2><p class="desc">' + f.desc + '</p><div class="portion-btns" data-id="' + f.id + '">' + btns + '</div>';
-    list.appendChild(card);
+    const hideBtn = isPro ? '<button class="hide-btn" onclick="hideFood(\'' + f.id + '\')" title="Verbergen">−</button>' : '';
+    html += '<div class="food-row">' +
+      '<div class="food-row-head"><span class="food-name">' + f.name + '</span><span class="food-desc">' + f.desc + '</span>' + hideBtn + '</div>' +
+      '<div class="portion-btns" data-id="' + f.id + '">' + btns + '</div></div>';
   });
+  list.innerHTML = html;
+}
+
+function resetPortion(id) {
+  values[id] = 0;
+  const container = document.querySelector('.portion-btns[data-id="' + CSS.escape(id) + '"]');
+  if (container) {
+    container.querySelectorAll('.portion-btn').forEach(b => b.classList.remove('active'));
+    const zeroBtn = container.querySelector('[data-carbs="0"]');
+    if (zeroBtn) zeroBtn.classList.add('active');
+  }
+  calculate();
+}
+
+function updateSelectedChips() {
+  const wrap = document.getElementById('selectedChips');
+  const entries = Object.keys(values).filter(k => values[k] > 0).map(k => [k, values[k]]);
+  if (!entries.length) {
+    wrap.style.display = 'none';
+    wrap.innerHTML = '';
+    return;
+  }
+  wrap.style.display = 'flex';
+  wrap.innerHTML = entries.map(([id, v]) =>
+    '<span class="chip">' + getFoodName(id) + ' <b>' + v + 'g</b><button class="chip-x" data-id="' + id + '">×</button></span>'
+  ).join('');
+}
+
+function hideFood(id) {
+  if (!isPro) return;
+  hiddenFoods[currentCountry] = hiddenFoods[currentCountry] || [];
+  if (hiddenFoods[currentCountry].indexOf(id) === -1) hiddenFoods[currentCountry].push(id);
+  localStorage.setItem('ketoHidden', JSON.stringify(hiddenFoods));
+  delete values[id];
+  renderFoods();
+  updateHiddenFoodsUI();
+  calculate();
+  toast('Verborgen — herstel in Instellingen');
+}
+
+function restoreFood(country, id) {
+  hiddenFoods[country] = (hiddenFoods[country] || []).filter(x => x !== id);
+  localStorage.setItem('ketoHidden', JSON.stringify(hiddenFoods));
+  if (country === currentCountry) renderFoods();
+  updateHiddenFoodsUI();
+  toast('Hersteld ✓');
+}
+
+function updateHiddenFoodsUI() {
+  const card = document.getElementById('hiddenFoodsCard');
+  const list = document.getElementById('hiddenFoodsList');
+  if (!isPro) { card.style.display = 'none'; return; }
+  const hidden = hiddenFoods[currentCountry] || [];
+  if (!hidden.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  list.innerHTML = hidden.map(id => {
+    const f = (BASE_FOODS[currentCountry] || []).find(x => x.id === id);
+    const name = f ? f.name : id;
+    return '<span class="chip">' + name + '<button class="chip-x" onclick="restoreFood(\'' + currentCountry + '\',\'' + id + '\')">↺</button></span>';
+  }).join('');
 }
 
 function addCustomFood() {
   const name = document.getElementById('customName').value.trim();
-  if (!name) { alert('Vul een naam in'); return; }
+  if (!name) { toast('Vul een naam in'); return; }
 
   const customs = customFoods[currentCountry] || [];
   if (!isPro && customs.length >= 3) {
-    alert('Free versie: maximaal 3 eigen gerechten. Upgrade naar Pro voor onbeperkt.');
+    toast('Free versie: max 3 eigen gerechten. Upgrade naar Pro voor onbeperkt.');
     return;
   }
 
@@ -324,7 +453,7 @@ function addCustomFood() {
 
   renderAllFoods();
   updateCustomLimitMsg();
-  alert('Gerecht toegevoegd ✓');
+  toast('Gerecht toegevoegd ✓');
 }
 
 function removeCustom(id) {
@@ -388,7 +517,7 @@ function changeCountry() {
   if (!isPro) {
     const select = document.getElementById('countrySelect');
     if (select.value !== currentCountry) {
-      alert('Andere landen alleen in Pro.');
+      toast('Andere landen alleen in Pro.');
       select.value = currentCountry;
       return;
     }
@@ -396,8 +525,10 @@ function changeCountry() {
   currentCountry = document.getElementById('countrySelect').value;
   localStorage.setItem('ketoCountry', currentCountry);
   values = {};
+  document.getElementById('foodSearch').value = '';
   renderAllFoods();
   calculate();
+  updateHiddenFoodsUI();
   document.getElementById('appTitle').textContent = currentCountry === 'ba' ? '🇧🇦 Visual Keto Log' : '🇳🇱 Visual Keto Log';
   updateCustomLimitMsg();
 }
@@ -432,12 +563,14 @@ function calculate() {
 
   document.getElementById('goalText').textContent = today + ' / ' + carbGoal + 'g';
   document.getElementById('goalFill').style.width = Math.min(today / carbGoal * 100, 100) + '%';
+
+  updateSelectedChips();
 }
 
 function logMeal() {
   let total = 0;
   for (const k in values) total += (values[k] || 0);
-  if (total === 0) { alert('Nog niets geselecteerd'); return; }
+  if (total === 0) { toast('Nog niets geselecteerd'); return; }
 
   const entry = {
     date: new Date().toISOString().slice(0,10),
@@ -462,7 +595,7 @@ function logMeal() {
   document.getElementById('mealNote').value = '';
   loadLog();
   calculate();
-  alert('Gelogd ✓');
+  toast('Gelogd ✓');
 }
 
 function loadLog() {
@@ -493,10 +626,10 @@ function updateLogLimitMsg() {
 }
 
 function exportLog() {
-  if (!isPro) { alert('Export alleen in Pro'); return; }
+  if (!isPro) { toast('Export alleen in Pro'); return; }
   let log = [];
   try { log = JSON.parse(localStorage.getItem('ketoLog') || '[]'); } catch(e) {}
-  if (!log.length) { alert('Geen logs'); return; }
+  if (!log.length) { toast('Geen logs'); return; }
   let text = 'Visual Keto Log\n\n';
   log.forEach(e => { text += e.date + ' ' + e.time + ' – ' + e.total + 'g\n'; });
   const a = document.createElement('a');
@@ -533,14 +666,16 @@ function togglePro() {
   localStorage.setItem('ketoPro', isPro ? 'true' : 'false');
   updateCountrySelect();
   updateProUI();
+  renderAllFoods();
+  updateHiddenFoodsUI();
   loadLog();
   updateLogLimitMsg();
-  alert(isPro ? 'Pro geactiveerd' : 'Pro uit');
+  toast(isPro ? 'Pro geactiveerd ✓' : 'Pro uitgeschakeld');
 }
 
 function openSupport() {
   if (SUPPORT_URL && SUPPORT_URL !== 'https://ko-fi.com/') window.open(SUPPORT_URL,'_blank');
-  else alert('Zet jouw betaallink in SUPPORT_URL');
+  else toast('Zet jouw betaallink in SUPPORT_URL');
 }
 
 function clearAllData() {
