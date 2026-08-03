@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a365d">
+<title>Visual Keto Log</title>
+<style>
+:root{--bg:#f0f4f8;--card:#fff;--text:#1a202c;--muted:#718096;--primary:#2b6cb0;--green:#38a169;--yellow:#d69e2e;--orange:#dd6b20;--red:#e53e3e;--border:#e2e8f0}
+[data-theme=dark]{--bg:#1a202c;--card:#2d3748;--text:#f7fafc;--muted:#a0aec0;--border:#4a5568}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);padding-bottom:90px;font-size:14px}
+header{background:linear-gradient(135deg,#1a365d,#2b6cb0);color:#fff;padding:12px 14px;position:sticky;top:0;z-index:40}
+.header-row{display:flex;justify-content:space-between;align-items:center}
+h1{font-size:16px;font-weight:700}
+.date{font-size:11px;opacity:.85}
+.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:48px;z-index:30}
+.tab{flex:1;text-align:center;padding:10px 4px;font-size:13px;font-weight:600;color:var(--muted);border:none;background:none}
+.tab.active{color:var(--primary);border-bottom:2px solid var(--primary)}
+.container{padding:10px 12px 0;max-width:520px;margin:0 auto}
+.panel{display:none}.panel.active{display:block}
+.status-card{background:var(--card);border-radius:12px;padding:12px;margin-bottom:10px;border:1px solid var(--border)}
+.ketosis-bar{height:10px;border-radius:99px;background:linear-gradient(to right,#38a169 0%,#38a169 20%,#d69e2e 20%,#d69e2e 50%,#dd6b20 50%,#dd6b20 80%,#e53e3e 80%);position:relative;margin:6px 0}
+.ketosis-marker{position:absolute;top:-4px;width:3px;height:18px;background:var(--text);border-radius:2px;transform:translateX(-50%);box-shadow:0 0 0 2px var(--card)}
+.recent-info{font-size:11px;color:var(--muted);margin-top:4px}
+.goal-row{display:flex;justify-content:space-between;font-size:12px;margin-top:6px}
+.goal-bar{height:5px;background:var(--border);border-radius:99px;margin-top:4px;overflow:hidden}
+.goal-fill{height:100%;background:var(--primary)}
+.card{background:var(--card);border-radius:10px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--border)}
+.card h2{font-size:14px;font-weight:700;margin-bottom:2px}
+.card .desc{font-size:11px;color:var(--muted);margin-bottom:6px}
+.portion-btns{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.portion-btn{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 4px;font-size:11px;font-weight:600;color:var(--text);cursor:pointer}
+.portion-btn.active{background:rgba(66,153,225,.15);border-color:var(--primary);color:var(--primary)}
+.free-card{border-left:3px solid var(--green)}
+.log-entry{background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;border:1px solid var(--border)}
+.note-input{width:100%;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);font-size:13px;margin-top:6px}
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);padding:8px 12px 12px;box-shadow:0 -3px 15px rgba(0,0,0,.08);border-radius:14px 14px 0 0;z-index:50;display:flex;gap:8px;align-items:center}
+.total-block{flex:1}
+.total-label{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted)}
+.total-value{font-size:22px;font-weight:800}
+.total-value.green{color:var(--green)}.total-value.yellow{color:var(--yellow)}.total-value.orange{color:var(--orange)}.total-value.red{color:var(--red)}
+.btn{border:none;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.btn-support{background:#f6ad55;color:#1a202c}
+.btn-small{padding:4px 7px;font-size:10px}
+select,input[type=number],input[type=text]{width:100%;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);font-size:13px}
+.setting-row{margin-bottom:10px}
+.setting-row label{display:block;font-size:12px;font-weight:600;margin-bottom:3px}
+.version{font-size:10px;color:var(--muted);text-align:center;margin-top:14px}
+.lock-msg{background:#fefcbf;color:#744210;padding:8px;border-radius:7px;font-size:12px;margin-bottom:8px;border:1px solid #f6e05e}
+.pro-badge{background:var(--primary);color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:4px}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-row">
+    <h1 id="appTitle">Visual Keto Log</h1>
+    <div class="date" id="todayDate"></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-tab="tracker">Tracker</button>
+  <button class="tab" data-tab="log">Logboek</button>
+  <button class="tab" data-tab="settings">Instellingen</button>
+</div>
+
+<div class="container">
+  <div id="panel-tracker" class="panel active">
+    <div class="status-card">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Ketose (laatste 7 dagen)</div>
+      <div class="ketosis-bar"><div class="ketosis-marker" id="ketosisMarker" style="left:5%"></div></div>
+      <div id="ketosisStatus" style="font-size:12px;font-weight:600;color:var(--green)">Diep in ketose</div>
+      <div class="recent-info" id="recentInfo">Laatste 7 dagen: 0g</div>
+      <div class="goal-row"><span>Doel vandaag</span><span id="goalText">0 / 30g</span></div>
+      <div class="goal-bar"><div class="goal-fill" id="goalFill" style="width:0%"></div></div>
+    </div>
+
+    <div id="customSection"></div>
+    <div id="foodList"></div>
+
+    <div class="card free-card">
+      <h2>0g items 🥩🐟🥚</h2>
+      <p class="desc">Vlees, vis, ei, kaas, ui, sla, broccoli, boter, olie. Onbeperkt.</p>
+    </div>
+  </div>
+
+  <div id="panel-log" class="panel">
+    <div id="logLimitMsg"></div>
+    <div class="card">
+      <h2>Huidige selectie loggen</h2>
+      <input type="text" class="note-input" id="mealNote" placeholder="Notitie (optioneel)">
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="logMeal()">Log maaltijd</button>
+    </div>
+    <div style="margin:8px 0">
+      <button class="btn btn-secondary" style="width:100%" onclick="exportLog()" id="exportBtn">Exporteer log</button>
+    </div>
+    <div id="logList"></div>
+  </div>
+
+  <div id="panel-settings" class="panel">
+    <div class="card">
+      <div class="setting-row">
+        <label>Land <span id="proCountryBadge"></span></label>
+        <select id="countrySelect" onchange="changeCountry()"></select>
+      </div>
+      <div class="setting-row">
+        <label>Dagelijkse doel (g)</label>
+        <input type="number" id="carbGoal" value="30" min="10" max="120" onchange="updateGoal()">
+      </div>
+      <div class="setting-row">
+        <button class="btn btn-secondary" style="width:100%" onclick="toggleTheme()">Donkere modus</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-bottom:6px">Eigen gerecht toevoegen</h2>
+      <div id="customLimitMsg" style="font-size:11px;color:var(--muted);margin-bottom:6px"></div>
+      <input type="text" id="customName" placeholder="Naam gerecht" style="margin-bottom:6px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:6px">
+        <input type="text" id="p1label" placeholder="Portie 1 (bijv. Klein)">
+        <input type="number" id="p1carbs" placeholder="g koolh.">
+        <input type="text" id="p2label" placeholder="Portie 2">
+        <input type="number" id="p2carbs" placeholder="g koolh.">
+        <input type="text" id="p3label" placeholder="Portie 3">
+        <input type="number" id="p3carbs" placeholder="g koolh.">
+        <input type="text" id="p4label" placeholder="Portie 4">
+        <input type="number" id="p4carbs" placeholder="g koolh.">
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="addCustomFood()">Toevoegen</button>
+    </div>
+
+    <div class="card" id="proCard">
+      <h2 style="margin-bottom:6px">Pro versie</h2>
+      <p class="desc" id="proDesc" style="margin-bottom:8px"></p>
+      <button class="btn btn-support" style="width:100%;margin-bottom:6px" onclick="togglePro()">Pro aan/uit</button>
+      <button class="btn btn-secondary" style="width:100%" onclick="openSupport()">Betaalpagina</button>
+    </div>
+
+    <div class="card">
+      <button class="btn btn-secondary" style="width:100%" onclick="clearAllData()">Alles wissen</button>
+    </div>
+    <div class="version">Visual Keto Log · v2.1</div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <div class="total-block">
+    <div class="total-label">Totaal vandaag</div>
+    <div class="total-value green" id="total">0g</div>
+  </div>
+  <button class="btn btn-secondary" onclick="resetToday()">Wissen</button>
+  <button class="btn btn-primary" onclick="goToLog()">Loggen</button>
+</div>
+
+<script>
+const BASE_FOODS = {
+  ba: [
+    {id:'burek',name:'Burek 🥮',desc:'Kaas/vlees/aardappel',portions:[{label:'Niet',carbs:0},{label:'Happen',carbs:15},{label:'½ punt',carbs:32},{label:'Heel',carbs:65}]},
+    {id:'lepinja',name:'Lepinja 🥖',desc:'Platbrood',portions:[{label:'Niet',carbs:0},{label:'¼',carbs:12},{label:'½',carbs:25},{label:'Heel',carbs:50}]},
+    {id:'potato',name:'Ispod sača 🥔',desc:'Aardappelen',portions:[{label:'Niet',carbs:0},{label:'Schep',carbs:15},{label:'Vuist',carbs:30},{label:'Bord',carbs:50}]},
+    {id:'pita',name:'Andere pite 🧀',desc:'Sirnica/zeljanica',portions:[{label:'Niet',carbs:0},{label:'Klein',carbs:20},{label:'Medium',carbs:40},{label:'Groot',carbs:65}]},
+    {id:'sarma',name:'Sarma 🥬',desc:'Gevulde kool',portions:[{label:'Niet',carbs:0},{label:'1-2',carbs:12},{label:'3-4',carbs:25},{label:'Bord',carbs:40}]},
+    {id:'ajvar',name:'Ajvar 🌶️',desc:'Paprika-spread',portions:[{label:'Niet',carbs:0},{label:'1 el',carbs:4},{label:'2 el',carbs:8},{label:'Rijk',carbs:15}]},
+    {id:'fruit',name:'Fruit 🍎',desc:'Appel/peer/banaan',portions:[{label:'Niet',carbs:0},{label:'Klein',carbs:10},{label:'Middel',carbs:18},{label:'Groot',carbs:30}]}
+  ],
+  nl: [
+    {id:'brood',name:'Brood 🍞',desc:'Snee',portions:[{label:'Niet',carbs:0},{label:'½ snee',carbs:8},{label:'1 snee',carbs:16},{label:'2 sneetjes',carbs:32}]},
+    {id:'aardappel',name:'Aardappelen 🥔',desc:'Gekookt/gebakken',portions:[{label:'Niet',carbs:0},{label:'Ei',carbs:8},{label:'Muis',carbs:18},{label:'Vuist',carbs:35}]},
+    {id:'pasta',name:'Pasta 🍝',desc:'Gekookt',portions:[{label:'Niet',carbs:0},{label:'Klein',carbs:12},{label:'Normaal',carbs:30},{label:'Groot',carbs:50}]},
+    {id:'rijst',name:'Rijst 🍚',desc:'Gekookt',portions:[{label:'Niet',carbs:0},{label:'Klein',carbs:15},{label:'Normaal',carbs:35},{label:'Groot',carbs:55}]},
+    {id:'pannenkoek',name:'Pannenkoek 🥞',desc:'Naturel',portions:[{label:'Niet',carbs:0},{label:'½',carbs:10},{label:'1 stuk',carbs:20},{label:'2 stuks',carbs:40}]},
+    {id:'friet',name:'Patat 🍟',desc:'Gebakken',portions:[{label:'Niet',carbs:0},{label:'Klein',carbs:20},{label:'Normaal',carbs:40},{label:'Groot',carbs:60}]},
+    {id:'havermout',name:'Havermout 🥣',desc:'',portions:[{label:'Niet',carbs:0},{label:'Klein',carbs:10},{label:'Normaal',carbs:20},{label:'Groot',carbs:35}]},
+    {id:'fruit',name:'Fruit 🍎',desc:'Appel/peer/banaan',portions:[{label:'Niet',carbs:0},{label:'Klein',carbs:10},{label:'Middel',carbs:18},{label:'Groot',carbs:30}]}
+  ]
+};
+
+let isPro = false;
+let currentCountry = 'ba';
+let carbGoal = 30;
+let values = {};
+let customFoods = {ba: [], nl: []};
+const SUPPORT_URL = 'https://ko-fi.com/';
+
+function init() {
+  try {
+    document.getElementById('todayDate').textContent = new Date().toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'});
+    isPro = localStorage.getItem('ketoPro') === 'true';
+    currentCountry = localStorage.getItem('ketoCountry') || 'ba';
+    carbGoal = parseInt(localStorage.getItem('ketoGoal')) || 30;
+    document.getElementById('carbGoal').value = carbGoal;
+    if (localStorage.getItem('ketoTheme') === 'dark') document.documentElement.setAttribute('data-theme','dark');
+
+    try {
+      customFoods = JSON.parse(localStorage.getItem('ketoCustom') || '{"ba":[],"nl":[]}');
+    } catch(e) { customFoods = {ba:[], nl:[]}; }
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById('panel-' + this.dataset.tab).classList.add('active');
+        if (this.dataset.tab === 'log') updateLogLimitMsg();
+        if (this.dataset.tab === 'settings') updateCustomLimitMsg();
+      });
+    });
+
+    document.getElementById('foodList').addEventListener('click', function(e) {
+      const btn = e.target.closest('.portion-btn');
+      if (!btn) return;
+      const id = btn.parentElement.dataset.id;
+      const carbs = parseInt(btn.dataset.carbs);
+      values[id] = carbs;
+      btn.parentElement.querySelectorAll('.portion-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      calculate();
+    });
+
+    document.getElementById('customSection').addEventListener('click', function(e) {
+      const btn = e.target.closest('.portion-btn');
+      if (!btn) return;
+      const id = btn.parentElement.dataset.id;
+      const carbs = parseInt(btn.dataset.carbs);
+      values[id] = carbs;
+      btn.parentElement.querySelectorAll('.portion-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      calculate();
+    });
+
+    updateCountrySelect();
+    updateProUI();
+    renderAllFoods();
+    calculate();
+    loadLog();
+  } catch(err) {
+    console.error(err);
+    alert('Startfout');
+  }
+}
+
+function getAllFoods() {
+  const base = BASE_FOODS[currentCountry] || [];
+  const customs = customFoods[currentCountry] || [];
+  return customs.concat(base);
+}
+
+function renderAllFoods() {
+  renderCustomSection();
+  renderFoods();
+}
+
+function renderCustomSection() {
+  const section = document.getElementById('customSection');
+  const customs = customFoods[currentCountry] || [];
+  if (customs.length === 0) {
+    section.innerHTML = '';
+    return;
+  }
+  let html = '';
+  customs.forEach(function(f) {
+    if (values[f.id] === undefined) values[f.id] = 0;
+    let btns = '';
+    f.portions.forEach(function(p) {
+      const active = values[f.id] === p.carbs ? ' active' : '';
+      btns += '<button class="portion-btn' + active + '" data-carbs="' + p.carbs + '">' + p.label + '</button>';
+    });
+    html += '<div class="card" style="border-left:3px solid #805ad5">' +
+      '<h2>' + f.name + ' <button class="btn btn-small btn-secondary" onclick="removeCustom(\'' + f.id + '\')" style="float:right">×</button></h2>' +
+      '<div class="portion-btns" data-id="' + f.id + '">' + btns + '</div></div>';
+  });
+  section.innerHTML = html;
+}
+
+function renderFoods() {
+  const list = document.getElementById('foodList');
+  list.innerHTML = '';
+  const foods = BASE_FOODS[currentCountry] || [];
+  foods.forEach(function(f) {
+    if (values[f.id] === undefined) values[f.id] = 0;
+    let btns = '';
+    f.portions.forEach(function(p) {
+      const active = values[f.id] === p.carbs ? ' active' : '';
+      btns += '<button class="portion-btn' + active + '" data-carbs="' + p.carbs + '">' + p.label + '</button>';
+    });
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<h2>' + f.name + '</h2><p class="desc">' + f.desc + '</p><div class="portion-btns" data-id="' + f.id + '">' + btns + '</div>';
+    list.appendChild(card);
+  });
+}
+
+function addCustomFood() {
+  const name = document.getElementById('customName').value.trim();
+  if (!name) { alert('Vul een naam in'); return; }
+
+  const customs = customFoods[currentCountry] || [];
+  if (!isPro && customs.length >= 3) {
+    alert('Free versie: maximaal 3 eigen gerechten. Upgrade naar Pro voor onbeperkt.');
+    return;
+  }
+
+  const portions = [];
+  for (let i = 1; i <= 4; i++) {
+    const label = document.getElementById('p' + i + 'label').value.trim() || ('Portie ' + i);
+    const carbs = parseInt(document.getElementById('p' + i + 'carbs').value) || 0;
+    portions.push({label: label, carbs: carbs});
+  }
+
+  const id = 'custom_' + Date.now();
+  customs.push({id: id, name: name, portions: portions});
+  customFoods[currentCountry] = customs;
+  localStorage.setItem('ketoCustom', JSON.stringify(customFoods));
+
+  // clear form
+  document.getElementById('customName').value = '';
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('p' + i + 'label').value = '';
+    document.getElementById('p' + i + 'carbs').value = '';
+  }
+
+  renderAllFoods();
+  updateCustomLimitMsg();
+  alert('Gerecht toegevoegd ✓');
+}
+
+function removeCustom(id) {
+  if (!confirm('Gerecht verwijderen?')) return;
+  customFoods[currentCountry] = (customFoods[currentCountry] || []).filter(f => f.id !== id);
+  localStorage.setItem('ketoCustom', JSON.stringify(customFoods));
+  delete values[id];
+  renderAllFoods();
+  calculate();
+  updateCustomLimitMsg();
+}
+
+function updateCustomLimitMsg() {
+  const el = document.getElementById('customLimitMsg');
+  const count = (customFoods[currentCountry] || []).length;
+  if (isPro) {
+    el.textContent = 'Pro: onbeperkt eigen gerechten (' + count + ' toegevoegd)';
+  } else {
+    el.textContent = 'Free: ' + count + ' / 3 eigen gerechten';
+  }
+}
+
+function updateCountrySelect() {
+  const select = document.getElementById('countrySelect');
+  select.innerHTML = '';
+  const countries = [{v:'ba',n:'🇧🇦 Bosnië'},{v:'nl',n:'🇳🇱 Nederland'}];
+  countries.forEach(c => {
+    if (isPro || c.v === currentCountry) {
+      const opt = document.createElement('option');
+      opt.value = c.v;
+      opt.textContent = c.n;
+      if (c.v === currentCountry) opt.selected = true;
+      select.appendChild(opt);
+    }
+  });
+  if (!isPro) {
+    const opt = document.createElement('option');
+    opt.disabled = true;
+    opt.textContent = '— Andere landen = Pro —';
+    select.appendChild(opt);
+  }
+}
+
+function updateProUI() {
+  const badge = document.getElementById('proCountryBadge');
+  const desc = document.getElementById('proDesc');
+  const exportBtn = document.getElementById('exportBtn');
+  if (isPro) {
+    badge.innerHTML = '<span class="pro-badge">PRO</span>';
+    desc.textContent = 'Pro actief: alle landen, onbeperkt log + eigen gerechten.';
+    if (exportBtn) exportBtn.style.display = 'block';
+  } else {
+    badge.innerHTML = '';
+    desc.innerHTML = 'Free: 1 land + 3 dagen log + max 3 eigen gerechten.';
+    if (exportBtn) exportBtn.style.display = 'none';
+  }
+  updateCustomLimitMsg();
+}
+
+function changeCountry() {
+  if (!isPro) {
+    const select = document.getElementById('countrySelect');
+    if (select.value !== currentCountry) {
+      alert('Andere landen alleen in Pro.');
+      select.value = currentCountry;
+      return;
+    }
+  }
+  currentCountry = document.getElementById('countrySelect').value;
+  localStorage.setItem('ketoCountry', currentCountry);
+  values = {};
+  renderAllFoods();
+  calculate();
+  document.getElementById('appTitle').textContent = currentCountry === 'ba' ? '🇧🇦 Visual Keto Log' : '🇳🇱 Visual Keto Log';
+  updateCustomLimitMsg();
+}
+
+function getLast7DaysTotal() {
+  try {
+    const log = JSON.parse(localStorage.getItem('ketoLog') || '[]');
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7);
+    const cutoffStr = cutoff.toISOString().slice(0,10);
+    return log.filter(e => e.date >= cutoffStr).reduce((s,e) => s + (e.total||0), 0);
+  } catch(e) { return 0; }
+}
+
+function calculate() {
+  let today = 0;
+  for (const k in values) today += (values[k] || 0);
+  const last7 = getLast7DaysTotal() + today;
+
+  const totalEl = document.getElementById('total');
+  totalEl.textContent = today + 'g';
+  totalEl.className = 'total-value ' + (today<=20?'green':today<=50?'yellow':today<=80?'orange':'red');
+
+  document.getElementById('ketosisMarker').style.left = Math.min(last7 / 150 * 100, 100) + '%';
+  document.getElementById('recentInfo').textContent = 'Laatste 7 dagen (incl. vandaag): ' + last7 + 'g';
+
+  const status = document.getElementById('ketosisStatus');
+  if (last7 <= 30) { status.textContent = 'Diep in ketose'; status.style.color = 'var(--green)'; }
+  else if (last7 <= 70) { status.textContent = 'Milde ketose mogelijk'; status.style.color = 'var(--yellow)'; }
+  else if (last7 <= 120) { status.textContent = 'Waarschijnlijk uit ketose'; status.style.color = 'var(--orange)'; }
+  else { status.textContent = 'Duidelijk uit ketose'; status.style.color = 'var(--red)'; }
+
+  document.getElementById('goalText').textContent = today + ' / ' + carbGoal + 'g';
+  document.getElementById('goalFill').style.width = Math.min(today / carbGoal * 100, 100) + '%';
+}
+
+function logMeal() {
+  let total = 0;
+  for (const k in values) total += (values[k] || 0);
+  if (total === 0) { alert('Nog niets geselecteerd'); return; }
+
+  const entry = {
+    date: new Date().toISOString().slice(0,10),
+    time: new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),
+    total: total,
+    items: Object.assign({}, values),
+    note: document.getElementById('mealNote').value.trim(),
+    country: currentCountry
+  };
+
+  let log = [];
+  try { log = JSON.parse(localStorage.getItem('ketoLog') || '[]'); } catch(e) {}
+  log.unshift(entry);
+
+  if (!isPro) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 3);
+    log = log.filter(e => e.date >= cutoff.toISOString().slice(0,10));
+  }
+
+  localStorage.setItem('ketoLog', JSON.stringify(log));
+  document.getElementById('mealNote').value = '';
+  loadLog();
+  calculate();
+  alert('Gelogd ✓');
+}
+
+function loadLog() {
+  const list = document.getElementById('logList');
+  let log = [];
+  try { log = JSON.parse(localStorage.getItem('ketoLog') || '[]'); } catch(e) {}
+
+  if (!isPro) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 3);
+    log = log.filter(e => e.date >= cutoff.toISOString().slice(0,10));
+  }
+
+  if (!log.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:16px;font-size:12px">Nog geen logs</div>';
+    return;
+  }
+
+  list.innerHTML = log.map(e => {
+    return '<div class="log-entry"><div style="font-size:10px;color:var(--muted)">' + e.date + ' · ' + e.time + '</div><strong>' + e.total + 'g</strong>' + (e.note ? ' — ' + e.note : '') + '</div>';
+  }).join('');
+}
+
+function updateLogLimitMsg() {
+  const el = document.getElementById('logLimitMsg');
+  if (!isPro) el.innerHTML = '<div class="lock-msg">Free: alleen laatste 3 dagen. Pro = onbeperkt.</div>';
+  else el.innerHTML = '';
+}
+
+function exportLog() {
+  if (!isPro) { alert('Export alleen in Pro'); return; }
+  let log = [];
+  try { log = JSON.parse(localStorage.getItem('ketoLog') || '[]'); } catch(e) {}
+  if (!log.length) { alert('Geen logs'); return; }
+  let text = 'Visual Keto Log\n\n';
+  log.forEach(e => { text += e.date + ' ' + e.time + ' – ' + e.total + 'g\n'; });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text],{type:'text/plain'}));
+  a.download = 'keto-log.txt';
+  a.click();
+}
+
+function resetToday() {
+  values = {};
+  renderAllFoods();
+  calculate();
+}
+
+function updateGoal() {
+  carbGoal = parseInt(document.getElementById('carbGoal').value) || 30;
+  localStorage.setItem('ketoGoal', carbGoal);
+  calculate();
+}
+
+function toggleTheme() {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (dark) {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('ketoTheme','light');
+  } else {
+    document.documentElement.setAttribute('data-theme','dark');
+    localStorage.setItem('ketoTheme','dark');
+  }
+}
+
+function togglePro() {
+  isPro = !isPro;
+  localStorage.setItem('ketoPro', isPro ? 'true' : 'false');
+  updateCountrySelect();
+  updateProUI();
+  loadLog();
+  updateLogLimitMsg();
+  alert(isPro ? 'Pro geactiveerd' : 'Pro uit');
+}
+
+function openSupport() {
+  if (SUPPORT_URL && SUPPORT_URL !== 'https://ko-fi.com/') window.open(SUPPORT_URL,'_blank');
+  else alert('Zet jouw betaallink in SUPPORT_URL');
+}
+
+function clearAllData() {
+  if (confirm('Alles wissen?')) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+function goToLog() {
+  document.querySelector('.tab[data-tab="log"]').click();
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+</script>
+</body>
+</html>
