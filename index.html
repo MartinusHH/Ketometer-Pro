@@ -686,9 +686,8 @@ function updateStreakBadge() {
 
 function updateActionBarVisibility() {
   const bar = document.getElementById('actionBar');
-  const isTracker = document.getElementById('panel-tracker').classList.contains('active');
   const mealTotal = sumValues(values);
-  if (isTracker && mealTotal > 0) bar.classList.remove('hidden');
+  if (mealTotal > 0) bar.classList.remove('hidden');
   else bar.classList.add('hidden');
 }
 
