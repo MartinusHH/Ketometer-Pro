@@ -71,9 +71,39 @@ h1{font-size:16px;font-weight:800;letter-spacing:-.01em}
 .free-card-details summary::-webkit-details-marker{display:none}
 .free-card-details[open] summary{margin-bottom:4px}
 
-.toast{position:fixed;left:50%;bottom:calc(64px + 70px + env(safe-area-inset-bottom) + 10px);transform:translate(-50%,10px);background:#1a202c;color:#fff;padding:9px 18px;border-radius:99px;font-size:12.5px;font-weight:700;opacity:0;transition:opacity .25s,transform .25s;z-index:100;box-shadow:0 4px 14px rgba(0,0,0,.3);max-width:82%;text-align:center;pointer-events:none}
+.toast{position:fixed;left:50%;bottom:calc(64px + 70px + env(safe-area-inset-bottom) + 10px);transform:translate(-50%,10px);background:#1a202c;color:#fff;padding:9px 18px;border-radius:99px;font-size:12.5px;font-weight:700;opacity:0;transition:opacity .25s,transform .25s;z-index:100;box-shadow:0 4px 14px rgba(0,0,0,.3);max-width:82%;text-align:center;pointer-events:none;display:flex;align-items:center;gap:10px;justify-content:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
-.log-entry{background:var(--bg);border-radius:10px;padding:9px 11px;margin-bottom:6px;font-size:12px;border:1px solid var(--border)}
+.toast.has-action{pointer-events:auto}
+.toast-action{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:12px;font-weight:800;padding:5px 11px;border-radius:99px;cursor:pointer;flex-shrink:0}
+
+/* ---- logbook ---- */
+.day-group{margin-bottom:14px}
+.day-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:0 2px}
+.day-title{font-size:12.5px;font-weight:800}
+.day-total{font-size:11px;font-weight:800;padding:3px 10px;border-radius:99px}
+.day-total.ok{background:rgba(56,161,105,.16);color:var(--green)}
+.day-total.over{background:rgba(229,62,62,.16);color:var(--red)}
+.log-entry{background:var(--card);border-radius:12px;padding:10px 11px;margin-bottom:6px;font-size:12px;border:1px solid var(--border);box-shadow:0 2px 0 rgba(0,0,0,.03)}
+.log-top{display:flex;align-items:center;gap:8px}
+.log-time{font-size:10.5px;color:var(--muted);font-weight:700;flex-shrink:0}
+.log-total{font-size:14px;font-weight:800;flex:1}
+.log-items{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.45}
+.log-note{font-size:11.5px;margin-top:3px;font-style:italic}
+.icon-btn{background:var(--bg);border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:50%;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 0 rgba(0,0,0,.06);transition:transform .08s,box-shadow .08s}
+.icon-btn:active{transform:translateY(1px);box-shadow:none}
+
+/* ---- week chart ---- */
+.week-chart{display:flex;align-items:flex-end;gap:5px;height:74px;position:relative;margin-top:14px}
+.goal-line{position:absolute;left:0;right:0;border-top:1.5px dashed var(--muted);opacity:.55}
+.goal-line span{position:absolute;right:0;top:-13px;font-size:9px;font-weight:800;color:var(--muted);background:var(--card);padding:0 3px}
+.week-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;height:100%}
+.week-bar{width:100%;border-radius:5px 5px 0 0;min-height:3px;background:var(--green);transition:height .25s}
+.week-bar.over{background:var(--red)}
+.week-bar.empty{background:var(--border)}
+.week-val{font-size:9px;font-weight:800;color:var(--muted)}
+.week-labels{display:flex;gap:5px;margin-top:4px}
+.week-labels span{flex:1;text-align:center;font-size:9.5px;font-weight:700;color:var(--muted)}
+.week-labels span.today{color:var(--primary)}
 
 .action-bar{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));background:var(--card);padding:10px 14px;box-shadow:0 -4px 16px rgba(0,0,0,.1);border-top:1px solid var(--border);z-index:55;display:flex;gap:10px;align-items:center;transform:translateY(0);opacity:1;transition:transform .22s ease,opacity .22s ease}
 .action-bar.hidden{transform:translateY(100%);opacity:0;pointer-events:none}
@@ -134,6 +164,7 @@ select,input[type=number],input[type=text]{width:100%;padding:10px 12px;border:1
       <div class="recent-info" id="recentInfo">Laatste 7 dagen: 0g</div>
       <div class="goal-row"><span>Doel vandaag</span><span id="goalText">0 / 30g</span></div>
       <div class="goal-bar"><div class="goal-fill" id="goalFill" style="width:0%"></div></div>
+      <div class="recent-info" id="budgetInfo" style="margin-top:6px"></div>
     </div>
 
     <div id="selectedChips" class="selected-chips" style="display:none"></div>
@@ -151,11 +182,17 @@ select,input[type=number],input[type=text]{width:100%;padding:10px 12px;border:1
   </div>
 
   <div id="panel-log" class="panel">
+    <div class="card">
+      <h2>Deze week</h2>
+      <p class="desc" id="weekSummary"></p>
+      <div class="week-chart" id="weekChart"></div>
+      <div class="week-labels" id="weekLabels"></div>
+    </div>
     <div id="logLimitMsg"></div>
-    <div style="margin-bottom:8px">
+    <div id="logList"></div>
+    <div style="margin:10px 0 4px">
       <button class="btn btn-secondary" style="width:100%" onclick="exportLog()" id="exportBtn">Exporteer log</button>
     </div>
-    <div id="logList"></div>
   </div>
 
   <div id="panel-settings" class="panel">
@@ -256,8 +293,39 @@ let customFoods = {ba: [], nl: []};
 let hiddenFoods = {ba: [], nl: []};
 const SUPPORT_URL = 'https://ko-fi.com/';
 
+// Local calendar date (YYYY-MM-DD). Deliberately not toISOString(), which uses
+// UTC and would file a late-evening meal under tomorrow.
+function dateStr(d) {
+  d = d || new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function daysAgoStr(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return dateStr(d);
+}
+
+function readLog() {
+  try { return JSON.parse(localStorage.getItem('ketoLog') || '[]'); } catch(e) { return []; }
+}
+
+function writeLog(log) {
+  // Entries are never pruned by tier any more (upgrading to Pro should reveal
+  // your history, not find it deleted) — just keep localStorage bounded.
+  if (log.length > 2000) log = log.slice(0, 2000);
+  localStorage.setItem('ketoLog', JSON.stringify(log));
+}
+
+// Free tier only shows the last 3 days: today plus the two before it.
+function visibleLog(log) {
+  if (isPro) return log;
+  const cutoff = daysAgoStr(2);
+  return log.filter(e => e.date >= cutoff);
+}
+
 let toastTimer = null;
-function toast(msg) {
+function toast(msg, action) {
   let el = document.getElementById('toastEl');
   if (!el) {
     el = document.createElement('div');
@@ -266,9 +334,20 @@ function toast(msg) {
     document.body.appendChild(el);
   }
   el.textContent = msg;
+  el.classList.toggle('has-action', !!action);
+  if (action) {
+    const btn = document.createElement('button');
+    btn.className = 'toast-action';
+    btn.textContent = action.label;
+    btn.onclick = function() {
+      el.classList.remove('show');
+      action.fn();
+    };
+    el.appendChild(btn);
+  }
   clearTimeout(toastTimer);
   requestAnimationFrame(() => el.classList.add('show'));
-  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+  toastTimer = setTimeout(() => el.classList.remove('show'), action ? 5000 : 1800);
 }
 
 function confetti() {
@@ -643,41 +722,43 @@ function sumValues(obj) {
   return Object.keys(obj).reduce((s, k) => s + (obj[k] || 0), 0);
 }
 
-function getLast7DaysTotal() {
-  try {
-    const log = JSON.parse(localStorage.getItem('ketoLog') || '[]');
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 7);
-    const cutoffStr = cutoff.toISOString().slice(0,10);
-    return log.filter(e => e.date >= cutoffStr).reduce((s,e) => s + (e.total||0), 0);
-  } catch(e) { return 0; }
+// Average grams per day over the last 7 days. Ketosis depends on what you eat
+// on a given day, so the gauge needs a daily figure — a 7-day sum would push a
+// perfectly on-target week (7 x 30g = 210g) straight into "out of ketosis".
+function getRecentDailyAverage(pendingMeal) {
+  const log = readLog();
+  const cutoff = daysAgoStr(6);
+  const byDay = {};
+  log.forEach(e => { if (e.date >= cutoff) byDay[e.date] = (byDay[e.date] || 0) + (e.total || 0); });
+  const today = dateStr();
+  byDay[today] = (byDay[today] || 0) + (pendingMeal || 0);
+
+  const dayCount = Object.keys(byDay).length;
+  if (!dayCount) return 0;
+  const total = Object.keys(byDay).reduce((s, d) => s + byDay[d], 0);
+  return Math.round(total / dayCount);
 }
 
 function getTodayLoggedTotal() {
-  try {
-    const log = JSON.parse(localStorage.getItem('ketoLog') || '[]');
-    const todayStr = new Date().toISOString().slice(0,10);
-    return log.filter(e => e.date === todayStr).reduce((s,e) => s + (e.total||0), 0);
-  } catch(e) { return 0; }
+  const today = dateStr();
+  return readLog().filter(e => e.date === today).reduce((s,e) => s + (e.total||0), 0);
 }
 
 function computeStreak() {
-  try {
-    const log = JSON.parse(localStorage.getItem('ketoLog') || '[]');
-    const byDay = {};
-    log.forEach(e => { byDay[e.date] = (byDay[e.date] || 0) + (e.total || 0); });
-    let streak = 0;
-    const d = new Date();
-    const todayStr = d.toISOString().slice(0,10);
-    if (byDay[todayStr] === undefined) d.setDate(d.getDate() - 1);
-    for (;;) {
-      const ds = d.toISOString().slice(0,10);
-      if (byDay[ds] === undefined) break;
-      if (byDay[ds] <= carbGoal) { streak++; d.setDate(d.getDate() - 1); }
-      else break;
-    }
-    return streak;
-  } catch(e) { return 0; }
+  const byDay = {};
+  readLog().forEach(e => { byDay[e.date] = (byDay[e.date] || 0) + (e.total || 0); });
+  let streak = 0;
+  const d = new Date();
+  // A day that isn't logged yet shouldn't break the streak — start at yesterday.
+  if (byDay[dateStr(d)] === undefined) d.setDate(d.getDate() - 1);
+  for (;;) {
+    const ds = dateStr(d);
+    if (byDay[ds] === undefined) break;
+    if (byDay[ds] > carbGoal) break;
+    streak++;
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
 }
 
 function updateStreakBadge() {
@@ -694,23 +775,35 @@ function updateActionBarVisibility() {
 function calculate() {
   const mealTotal = sumValues(values);
   const todayTotal = getTodayLoggedTotal() + mealTotal;
-  const last7 = getLast7DaysTotal() + mealTotal;
+  const avg = getRecentDailyAverage(mealTotal);
 
   document.getElementById('total').textContent = mealTotal + 'g';
 
-  document.getElementById('ketosisMarker').style.left = Math.min(last7 / 150 * 100, 100) + '%';
-  document.getElementById('recentInfo').textContent = 'Laatste 7 dagen (incl. vandaag): ' + last7 + 'g';
+  // Scale runs 0–120g/day; the bar's colour stops sit at 20%/50%/80% of that,
+  // i.e. the 24g / 60g / 96g boundaries used below.
+  document.getElementById('ketosisMarker').style.left = Math.min(avg / 120 * 100, 100) + '%';
+  document.getElementById('recentInfo').textContent = 'Gemiddeld ' + avg + 'g per dag (laatste 7 dagen)';
 
   const status = document.getElementById('ketosisStatus');
-  if (last7 <= 30) { status.textContent = '🥑 Diep in ketose'; status.style.color = 'var(--green)'; }
-  else if (last7 <= 70) { status.textContent = '🙂 Milde ketose mogelijk'; status.style.color = 'var(--yellow)'; }
-  else if (last7 <= 120) { status.textContent = '⚠️ Waarschijnlijk uit ketose'; status.style.color = 'var(--orange)'; }
+  if (avg <= 25) { status.textContent = '🥑 Diep in ketose'; status.style.color = 'var(--green)'; }
+  else if (avg <= 50) { status.textContent = '🙂 Milde ketose mogelijk'; status.style.color = 'var(--yellow)'; }
+  else if (avg <= 100) { status.textContent = '⚠️ Waarschijnlijk uit ketose'; status.style.color = 'var(--orange)'; }
   else { status.textContent = '🚫 Duidelijk uit ketose'; status.style.color = 'var(--red)'; }
 
   document.getElementById('goalText').textContent = todayTotal + ' / ' + carbGoal + 'g';
   const goalFill = document.getElementById('goalFill');
   goalFill.style.width = Math.min(todayTotal / carbGoal * 100, 100) + '%';
   goalFill.style.background = todayTotal <= carbGoal * 0.7 ? 'var(--green)' : todayTotal <= carbGoal ? 'var(--yellow)' : 'var(--red)';
+
+  const left = carbGoal - todayTotal;
+  const budget = document.getElementById('budgetInfo');
+  if (left >= 0) {
+    budget.textContent = 'Nog ' + left + 'g te gaan vandaag';
+    budget.style.color = 'var(--muted)';
+  } else {
+    budget.textContent = (-left) + 'g over je doel vandaag';
+    budget.style.color = 'var(--red)';
+  }
 
   updateSelectedChips();
   updateActionBarVisibility();
@@ -720,27 +813,29 @@ function logMeal() {
   const total = sumValues(values);
   if (total === 0) { toast('Nog niets geselecteerd'); return; }
 
+  // Only keep the portions that were actually eaten, so the logbook can show
+  // what a meal consisted of without listing every food at 0g.
+  const items = {};
+  Object.keys(values).forEach(k => { if (values[k] > 0) items[k] = values[k]; });
+
   const entry = {
-    date: new Date().toISOString().slice(0,10),
+    id: 'e' + Date.now() + Math.random().toString(36).slice(2,7),
+    date: dateStr(),
     time: new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),
     total: total,
-    items: Object.assign({}, values),
+    items: items,
     note: document.getElementById('mealNote').value.trim(),
     country: currentCountry
   };
 
-  let log = [];
-  try { log = JSON.parse(localStorage.getItem('ketoLog') || '[]'); } catch(e) {}
+  let log = readLog();
   log.unshift(entry);
+  writeLog(log);
 
-  if (!isPro) {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 3);
-    log = log.filter(e => e.date >= cutoff.toISOString().slice(0,10));
-  }
-
-  localStorage.setItem('ketoLog', JSON.stringify(log));
   const stayedOnTrack = getTodayLoggedTotal() <= carbGoal;
+  const restore = Object.assign({}, values);
+  const restoreNote = entry.note;
+
   document.getElementById('mealNote').value = '';
   values = {};
   renderAllFoods();
@@ -748,33 +843,190 @@ function logMeal() {
   calculate();
   updateStreakBadge();
 
+  const undo = {
+    label: 'Ongedaan',
+    fn: function() {
+      writeLog(readLog().filter(e => e.id !== entry.id));
+      values = restore;
+      document.getElementById('mealNote').value = restoreNote;
+      renderAllFoods();
+      loadLog();
+      calculate();
+      updateStreakBadge();
+      toast('Teruggezet');
+    }
+  };
+
   if (stayedOnTrack) {
     confetti();
-    toast('Gelogd ✓ (' + total + 'g) — mooi op koers 🎉');
+    toast('Gelogd ✓ (' + total + 'g) — mooi op koers 🎉', undo);
   } else {
-    toast('Gelogd ✓ (' + total + 'g)');
+    toast('Gelogd ✓ (' + total + 'g)', undo);
   }
 }
 
-function loadLog() {
-  const list = document.getElementById('logList');
-  let log = [];
-  try { log = JSON.parse(localStorage.getItem('ketoLog') || '[]'); } catch(e) {}
+function deleteLogEntry(id) {
+  const log = readLog();
+  const entry = log.find(e => e.id === id);
+  if (!entry) return;
+  writeLog(log.filter(e => e.id !== id));
+  loadLog();
+  calculate();
+  updateStreakBadge();
+  toast('Verwijderd', {
+    label: 'Ongedaan',
+    fn: function() {
+      const back = readLog();
+      back.unshift(entry);
+      back.sort((a,b) => (b.date + b.time).localeCompare(a.date + a.time));
+      writeLog(back);
+      loadLog();
+      calculate();
+      updateStreakBadge();
+    }
+  });
+}
 
-  if (!isPro) {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 3);
-    log = log.filter(e => e.date >= cutoff.toISOString().slice(0,10));
-  }
+// One-tap re-log of an earlier meal — the single biggest friction saver for
+// the breakfast/lunch you eat most days.
+function repeatMeal(id) {
+  const entry = readLog().find(e => e.id === id);
+  if (!entry) return;
 
-  if (!log.length) {
-    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:16px;font-size:12px">Nog geen logs</div>';
+  if (entry.country && entry.country !== currentCountry) {
+    toast('Die maaltijd hoort bij een ander land');
     return;
   }
 
-  list.innerHTML = log.map(e => {
-    return '<div class="log-entry"><div style="font-size:10px;color:var(--muted)">' + e.date + ' · ' + e.time + '</div><strong>' + e.total + 'g</strong>' + (e.note ? ' — ' + e.note : '') + '</div>';
+  const known = {};
+  getAllFoods().forEach(f => { known[f.id] = true; });
+  let missing = 0;
+  values = {};
+  Object.keys(entry.items || {}).forEach(k => {
+    if (known[k]) values[k] = entry.items[k];
+    else missing++;
+  });
+
+  if (!Object.keys(values).length) {
+    toast('Die gerechten bestaan niet meer');
+    return;
+  }
+
+  document.querySelector('.nav-btn[data-tab="tracker"]').click();
+  renderAllFoods();
+  calculate();
+  window.scrollTo(0, 0);
+  toast(missing ? 'Overgenomen (' + missing + ' gerecht niet meer beschikbaar)' : 'Overgenomen — tik op Loggen');
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function dayLabel(ds) {
+  if (ds === dateStr()) return 'Vandaag';
+  if (ds === daysAgoStr(1)) return 'Gisteren';
+  const parts = ds.split('-');
+  const d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+  return d.toLocaleDateString('nl-NL', {weekday:'long', day:'numeric', month:'short'});
+}
+
+function loadLog() {
+  renderWeekChart();
+
+  const list = document.getElementById('logList');
+  const log = visibleLog(readLog());
+
+  if (!log.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px 16px;font-size:12px">Nog niets gelogd.<br>Kies een gerecht op het Tracker-tabblad.</div>';
+    return;
+  }
+
+  // Group by day, newest day first, so a day total is visible at a glance.
+  const days = [];
+  const byDay = {};
+  log.forEach(e => {
+    if (!byDay[e.date]) { byDay[e.date] = []; days.push(e.date); }
+    byDay[e.date].push(e);
+  });
+  days.sort().reverse();
+
+  list.innerHTML = days.map(ds => {
+    const entries = byDay[ds];
+    const dayTotal = entries.reduce((s, e) => s + (e.total || 0), 0);
+    const cls = dayTotal <= carbGoal ? 'ok' : 'over';
+
+    const rows = entries.map(e => {
+      const items = Object.keys(e.items || {})
+        .filter(k => e.items[k] > 0)
+        .map(k => esc(getFoodName(k)) + ' ' + e.items[k] + 'g')
+        .join(' · ');
+      // Entries logged before this version have no id and cannot be targeted.
+      const actions = e.id
+        ? '<button class="icon-btn" onclick="repeatMeal(\'' + e.id + '\')" title="Nogmaals loggen">↻</button>' +
+          '<button class="icon-btn" onclick="deleteLogEntry(\'' + e.id + '\')" title="Verwijderen">🗑</button>'
+        : '';
+      return '<div class="log-entry">' +
+        '<div class="log-top">' +
+          '<span class="log-time">' + esc(e.time || '') + '</span>' +
+          '<span class="log-total">' + e.total + 'g</span>' +
+          actions +
+        '</div>' +
+        (items ? '<div class="log-items">' + items + '</div>' : '') +
+        (e.note ? '<div class="log-note">“' + esc(e.note) + '”</div>' : '') +
+      '</div>';
+    }).join('');
+
+    return '<div class="day-group">' +
+      '<div class="day-head">' +
+        '<span class="day-title">' + esc(dayLabel(ds)) + '</span>' +
+        '<span class="day-total ' + cls + '">' + dayTotal + ' / ' + carbGoal + 'g</span>' +
+      '</div>' + rows +
+    '</div>';
   }).join('');
+}
+
+function renderWeekChart() {
+  const chart = document.getElementById('weekChart');
+  const labels = document.getElementById('weekLabels');
+  if (!chart) return;
+
+  const byDay = {};
+  visibleLog(readLog()).forEach(e => { byDay[e.date] = (byDay[e.date] || 0) + (e.total || 0); });
+
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const ds = daysAgoStr(i);
+    days.push({ds: ds, total: byDay[ds], today: i === 0});
+  }
+
+  const max = Math.max(carbGoal * 1.4, ...days.map(d => d.total || 0), 1);
+
+  chart.innerHTML = '<div class="goal-line" style="bottom:' + (carbGoal / max * 100) + '%"><span>' + carbGoal + 'g</span></div>' +
+    days.map(d => {
+      const logged = d.total !== undefined;
+      const val = d.total || 0;
+      const h = logged ? Math.max(val / max * 100, 3) : 3;
+      const cls = !logged ? 'empty' : (val <= carbGoal ? '' : 'over');
+      return '<div class="week-col">' +
+        '<span class="week-val">' + (logged ? val : '') + '</span>' +
+        '<div class="week-bar ' + cls + '" style="height:' + h + '%"></div>' +
+      '</div>';
+    }).join('');
+
+  labels.innerHTML = days.map(d => {
+    const parts = d.ds.split('-');
+    const dt = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+    const nm = dt.toLocaleDateString('nl-NL', {weekday:'short'}).replace('.','').slice(0,2);
+    return '<span class="' + (d.today ? 'today' : '') + '">' + nm + '</span>';
+  }).join('');
+
+  const loggedDays = days.filter(d => d.total !== undefined);
+  const onTrack = loggedDays.filter(d => d.total <= carbGoal).length;
+  const summary = document.getElementById('weekSummary');
+  summary.textContent = loggedDays.length
+    ? onTrack + ' van ' + loggedDays.length + ' gelogde dagen binnen je doel'
+    : 'Nog geen dagen gelogd';
 }
 
 function updateLogLimitMsg() {
@@ -785,15 +1037,26 @@ function updateLogLimitMsg() {
 
 function exportLog() {
   if (!isPro) { toast('Export alleen in Pro'); return; }
-  let log = [];
-  try { log = JSON.parse(localStorage.getItem('ketoLog') || '[]'); } catch(e) {}
+  const log = readLog();
   if (!log.length) { toast('Geen logs'); return; }
-  let text = 'Visual Keto Log\n\n';
-  log.forEach(e => { text += e.date + ' ' + e.time + ' – ' + e.total + 'g\n'; });
+
+  // CSV so it opens straight into Excel/Sheets, or goes to a dietitian as-is.
+  const rows = [['datum','tijd','koolhydraten_g','gerechten','notitie']];
+  log.slice().sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time)).forEach(e => {
+    const items = Object.keys(e.items || {})
+      .filter(k => e.items[k] > 0)
+      .map(k => getFoodName(k) + ' ' + e.items[k] + 'g')
+      .join('; ');
+    rows.push([e.date, e.time || '', e.total, items, e.note || '']);
+  });
+
+  const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([text],{type:'text/plain'}));
-  a.download = 'keto-log.txt';
+  a.href = URL.createObjectURL(new Blob(['﻿' + csv],{type:'text/csv;charset=utf-8'}));
+  a.download = 'keto-log-' + dateStr() + '.csv';
   a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Geëxporteerd ✓');
 }
 
 function resetToday() {
@@ -807,6 +1070,7 @@ function updateGoal() {
   localStorage.setItem('ketoGoal', carbGoal);
   calculate();
   updateStreakBadge();
+  loadLog();
 }
 
 function toggleTheme() {
