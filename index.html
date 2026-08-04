@@ -2,1110 +2,1187 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#1a365d">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f4f6f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1412" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Visuele keto-tracker: log koolhydraten met porties in plaats van grammen tellen.">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Keto">
 <title>Visual Keto Log</title>
 <style>
-:root{--bg:#f0f4f8;--card:#fff;--text:#1a202c;--muted:#718096;--primary:#2b6cb0;--primary-dark:#1a4c80;--green:#38a169;--yellow:#d69e2e;--orange:#dd6b20;--red:#e53e3e;--purple:#8854d0;--border:#e2e8f0}
-[data-theme=dark]{--bg:#161b22;--card:#232b36;--text:#f7fafc;--muted:#8ea0b5;--primary-dark:#0f2f4d;--border:#3a4552}
+/* ============================================================
+   Design tokens
+   Touch targets follow the 48px floor (Material) / 44px (HIG);
+   base type is 16px so nothing needs pinch-zoom to read.
+   ============================================================ */
+:root{
+  --bg:#f4f6f5;
+  --surface:#ffffff;
+  --surface-2:#eef1f0;
+  --text:#141a18;
+  --text-2:#586661;
+  --border:#e3e8e5;
+  --accent:#0f7f66;
+  --accent-ink:#0a5d4a;
+  --accent-soft:#e0f0eb;
+  --on-accent:#ffffff;
+  --warn:#a76a12;
+  --warn-soft:#fbf0da;
+  --danger:#c23c3c;
+  --danger-soft:#fae7e7;
+  --shadow-sm:0 1px 2px rgba(16,32,27,.05), 0 1px 3px rgba(16,32,27,.04);
+  --shadow-md:0 4px 14px rgba(16,32,27,.08), 0 2px 4px rgba(16,32,27,.04);
+  --shadow-lg:0 -6px 24px rgba(16,32,27,.09);
+  --r-sm:12px; --r-md:16px; --r-lg:22px; --r-pill:999px;
+  --tap:48px;
+}
+[data-theme=dark]{
+  --bg:#0e1412;
+  --surface:#171f1c;
+  --surface-2:#212b27;
+  --text:#eaf1ee;
+  --text-2:#9aaba4;
+  --border:#2a3631;
+  --accent:#3cbf96;
+  --accent-ink:#7fd9bb;
+  --accent-soft:#14302a;
+  --on-accent:#062018;
+  --warn:#e2a94b;
+  --warn-soft:#2c2418;
+  --danger:#ea6d6d;
+  --danger-soft:#2f1c1c;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow-md:0 4px 14px rgba(0,0,0,.45);
+  --shadow-lg:0 -6px 24px rgba(0,0,0,.5);
+}
+
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);padding-bottom:calc(64px + 70px + env(safe-area-inset-bottom));font-size:14px}
-header{background:linear-gradient(135deg,#1a365d,#2b6cb0);color:#fff;padding:12px 14px;position:sticky;top:0;z-index:40}
-.header-row{display:flex;justify-content:space-between;align-items:center}
-.brand{display:flex;align-items:center;gap:8px}
-.app-badge{background:rgba(255,255,255,.2);width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-h1{font-size:16px;font-weight:800;letter-spacing:-.01em}
-.header-right{display:flex;align-items:center;gap:8px}
-.streak-badge{background:linear-gradient(135deg,#ff9f43,#ee5253);color:#fff;font-size:11px;font-weight:800;padding:4px 9px;border-radius:99px;white-space:nowrap;box-shadow:0 2px 0 rgba(0,0,0,.15)}
-.date{font-size:11px;opacity:.85}
-.container{padding:10px 12px 0;max-width:520px;margin:0 auto}
-.panel{display:none}.panel.active{display:block}
-.status-card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:10px;border:1px solid var(--border)}
-.status-label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
-.ketosis-bar{height:12px;border-radius:99px;background:linear-gradient(to right,#38a169 0%,#38a169 20%,#d69e2e 20%,#d69e2e 50%,#dd6b20 50%,#dd6b20 80%,#e53e3e 80%);position:relative;margin:8px 0}
-.ketosis-marker{position:absolute;top:-4px;width:4px;height:20px;background:var(--text);border-radius:2px;transform:translateX(-50%);box-shadow:0 0 0 2px var(--card)}
-.ketosis-status{font-size:14px;font-weight:800}
-.recent-info{font-size:11px;color:var(--muted);margin-top:4px}
-.goal-row{display:flex;justify-content:space-between;font-size:12px;margin-top:8px;font-weight:600}
-.goal-bar{height:8px;background:var(--border);border-radius:99px;margin-top:5px;overflow:hidden}
-.goal-fill{height:100%;background:var(--green);transition:width .25s,background .25s;border-radius:99px}
-.card{background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:8px;border:1px solid var(--border)}
-.card h2{font-size:14px;font-weight:700;margin-bottom:2px}
-.card .desc{font-size:11px;color:var(--muted);margin-bottom:6px}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  background:var(--bg);color:var(--text);font-size:16px;line-height:1.5;
+  padding-bottom:calc(72px + env(safe-area-inset-bottom));
+  overflow-x:hidden;
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
 
-/* ---- accordion food rows ---- */
-.food-row{background:var(--card);border-radius:14px;margin-bottom:7px;border:1px solid var(--border);overflow:hidden;box-shadow:0 2px 0 rgba(0,0,0,.03)}
-.food-row.custom-row{border-left:3px solid var(--purple)}
-.food-row-toggle{width:100%;display:flex;align-items:center;gap:8px;padding:12px 12px;cursor:pointer}
-.food-name{font-size:13.5px;font-weight:800;flex:1}
-.food-badge{background:var(--primary);color:#fff;font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px;flex-shrink:0}
-.chev{color:var(--muted);font-size:11px;transition:transform .2s;flex-shrink:0}
-.food-row.expanded .chev{transform:rotate(180deg)}
-.food-row-body{max-height:0;overflow:hidden;transition:max-height .25s ease}
-.food-row.expanded .food-row-body{max-height:200px}
-.food-row-body-inner{padding:0 12px 12px}
-.food-desc{font-size:11px;color:var(--muted);margin-bottom:8px}
+/* ---------- layout ---------- */
+.wrap{max-width:560px;margin:0 auto;padding:0 16px}
+.panel{display:none;padding-top:8px;animation:fade .22s ease}
+.panel.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-.portion-btns{display:flex;gap:5px}
-.portion-btn{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:9px 2px;font-size:10.5px;font-weight:800;color:var(--text);cursor:pointer;text-align:center;box-shadow:0 2px 0 rgba(0,0,0,.06);transition:background .12s,transform .08s,border-color .12s,box-shadow .08s}
-.portion-btn:active{transform:translateY(1px) scale(.96);box-shadow:0 0 0 rgba(0,0,0,0)}
-.portion-btn.active{background:rgba(66,153,225,.15);border-color:var(--primary);color:var(--primary)}
-.portion-btn.active:not([data-carbs="0"]){background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 3px 0 var(--primary-dark)}
-.portion-btn.active:not([data-carbs="0"]):active{box-shadow:0 1px 0 var(--primary-dark)}
-.portion-btn.active:not([data-carbs="0"])::before{content:'✓ '}
+/* ---------- top bar ---------- */
+.topbar{padding:calc(env(safe-area-inset-top) + 14px) 0 6px}
+.topbar-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.greeting{font-size:22px;font-weight:800;letter-spacing:-.02em}
+.subgreeting{font-size:14px;color:var(--text-2);margin-top:1px}
+.streak{
+  display:inline-flex;align-items:center;gap:6px;flex-shrink:0;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-pill);
+  padding:8px 14px;font-size:15px;font-weight:800;box-shadow:var(--shadow-sm);min-height:40px;
+}
+.streak.lit{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
 
-.hide-btn{background:var(--bg);border:1px solid var(--border);color:var(--muted);width:25px;height:25px;border-radius:50%;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 0 rgba(0,0,0,.06);transition:transform .08s,box-shadow .08s}
-.hide-btn:active{transform:translateY(1px);box-shadow:none}
-.hide-btn:hover{color:var(--red);border-color:var(--red)}
+/* ---------- cards ---------- */
+.card{background:var(--surface);border-radius:var(--r-lg);padding:18px;margin-bottom:12px;box-shadow:var(--shadow-sm)}
+.card-title{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.card-sub{font-size:14px;color:var(--text-2);margin-top:2px}
+.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:22px 4px 10px}
+.section-title{font-size:15px;font-weight:800;letter-spacing:.01em}
+.section-link{font-size:14px;font-weight:700;color:var(--accent);padding:6px 2px}
 
-.selected-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
-.chip{display:inline-flex;align-items:center;gap:3px;background:rgba(43,108,176,.13);color:var(--primary);border-radius:99px;padding:6px 4px 6px 12px;font-size:12px;font-weight:800;box-shadow:0 2px 0 rgba(43,108,176,.1)}
-.chip b{font-weight:800}
-.chip-x{background:rgba(0,0,0,.08);border:none;color:var(--primary);font-size:12px;cursor:pointer;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-left:3px}
+/* ---------- hero ring ---------- */
+.hero{display:flex;align-items:center;gap:20px}
+.ring-wrap{position:relative;width:132px;height:132px;flex-shrink:0}
+.ring{transform:rotate(-90deg)}
+.ring-track{stroke:var(--surface-2)}
+.ring-fill{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .5s cubic-bezier(.22,1,.36,1),stroke .3s}
+.ring-fill.warn{stroke:var(--warn)}
+.ring-fill.over{stroke:var(--danger)}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring-num{font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.ring-unit{font-size:13px;font-weight:700;color:var(--text-2);margin-top:3px}
+.hero-side{flex:1;min-width:0}
+.hero-status{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:800;padding:6px 12px;border-radius:var(--r-pill);background:var(--accent-soft);color:var(--accent-ink)}
+.hero-status.warn{background:var(--warn-soft);color:var(--warn)}
+.hero-status.over{background:var(--danger-soft);color:var(--danger)}
+.hero-msg{font-size:15px;color:var(--text-2);margin-top:10px;line-height:1.45}
+.hero-goal{font-size:14px;font-weight:700;margin-top:10px}
 
-.free-card-details{background:var(--card);border-radius:14px;padding:9px 14px;margin-bottom:8px;border:1px solid var(--border);border-left:3px solid var(--green);font-size:12px;box-shadow:0 2px 0 rgba(0,0,0,.03)}
-.free-card-details summary{cursor:pointer;font-weight:800;font-size:13px;list-style:none}
-.free-card-details summary::-webkit-details-marker{display:none}
-.free-card-details[open] summary{margin-bottom:4px}
+/* ---------- quick log ---------- */
+.quick{display:flex;flex-direction:column;gap:8px}
+.quick-btn{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:12px 14px;min-height:var(--tap);box-shadow:var(--shadow-sm);
+  transition:transform .1s ease,background .15s;
+}
+.quick-btn:active{transform:scale(.985);background:var(--surface-2)}
+.quick-icon{width:38px;height:38px;border-radius:var(--r-sm);background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.quick-body{flex:1;min-width:0}
+.quick-name{display:block;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.quick-meta{display:block;font-size:13px;color:var(--text-2);margin-top:1px}
+.quick-add{font-size:15px;font-weight:800;color:var(--accent);flex-shrink:0;padding-left:4px}
 
-.toast{position:fixed;left:50%;bottom:calc(64px + 70px + env(safe-area-inset-bottom) + 10px);transform:translate(-50%,10px);background:#1a202c;color:#fff;padding:9px 18px;border-radius:99px;font-size:12.5px;font-weight:700;opacity:0;transition:opacity .25s,transform .25s;z-index:100;box-shadow:0 4px 14px rgba(0,0,0,.3);max-width:82%;text-align:center;pointer-events:none;display:flex;align-items:center;gap:10px;justify-content:center}
+/* ---------- food cards (the tracker) ---------- */
+.search{position:relative;margin-bottom:14px}
+.search input{
+  width:100%;min-height:var(--tap);padding:12px 16px 12px 44px;font-size:16px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-pill);
+  box-shadow:var(--shadow-sm);
+}
+.search input::placeholder{color:var(--text-2)}
+.search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:16px;opacity:.6;pointer-events:none}
+
+.food{background:var(--surface);border-radius:var(--r-lg);padding:14px;margin-bottom:10px;box-shadow:var(--shadow-sm);transition:box-shadow .2s}
+.food.picked{box-shadow:0 0 0 2px var(--accent), var(--shadow-sm)}
+.food-head{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+.food-name{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.food-desc{font-size:13px;color:var(--text-2);margin-top:1px}
+.food-tag{margin-left:auto;flex-shrink:0;font-size:13px;font-weight:800;color:var(--accent-ink);background:var(--accent-soft);padding:5px 11px;border-radius:var(--r-pill)}
+.food-own{font-size:11px;font-weight:800;color:var(--accent-ink);background:var(--accent-soft);padding:3px 8px;border-radius:var(--r-pill);letter-spacing:.03em}
+
+/* Portions are always visible — no accordion — and show what they cost
+   before you tap. WCAG 2.5.8 wants >=24px targets with >=24px separation;
+   these are 56px tall with an 8px gutter. */
+.portions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.portions.four{grid-template-columns:repeat(4,1fr)}
+.portion{
+  min-height:56px;padding:8px 4px;border-radius:14px;
+  background:var(--surface-2);border:1.5px solid transparent;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  transition:transform .09s ease,background .15s,border-color .15s,color .15s;
+}
+.portion:active{transform:scale(.94)}
+.portion .lbl{font-size:13px;font-weight:800;line-height:1.15;text-align:center}
+.portion .g{font-size:12px;font-weight:600;color:var(--text-2);transition:color .15s}
+.portion[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.portion[aria-pressed=true] .g{color:var(--on-accent);opacity:.85}
+
+/* ---------- pending meal bar ---------- */
+.pending{
+  position:fixed;left:0;right:0;bottom:calc(68px + env(safe-area-inset-bottom));z-index:55;
+  background:var(--surface);box-shadow:var(--shadow-lg);border-top:1px solid var(--border);
+  padding:12px 16px calc(12px);
+  transform:translateY(130%);transition:transform .28s cubic-bezier(.22,1,.36,1);
+}
+.pending.show{transform:translateY(0)}
+.pending-inner{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.pending-clear{width:var(--tap);height:var(--tap);border-radius:50%;background:var(--surface-2);font-size:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.pending-clear:active{transform:scale(.92)}
+.pending-info{flex:1;min-width:0}
+.pending-label{font-size:12px;font-weight:800;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em}
+.pending-total{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.pending-items{font-size:13px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- buttons ---------- */
+.btn{
+  min-height:var(--tap);padding:13px 22px;border-radius:14px;font-size:16px;font-weight:800;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  transition:transform .09s ease,background .15s,opacity .15s;
+}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:var(--on-accent);box-shadow:var(--shadow-sm)}
+.btn-quiet{background:var(--surface-2);color:var(--text)}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text)}
+.btn-danger{background:transparent;border:1.5px solid var(--danger);color:var(--danger)}
+.btn-block{width:100%}
+.btn:disabled{opacity:.45;pointer-events:none}
+
+/* ---------- history ---------- */
+.week{margin-top:16px}
+.week-bars{display:flex;align-items:flex-end;gap:6px;height:96px;position:relative}
+.goal-line{position:absolute;left:0;right:0;border-top:1.5px dashed var(--border);pointer-events:none}
+.goal-line span{position:absolute;right:0;top:-9px;font-size:11px;font-weight:800;color:var(--text-2);background:var(--surface);padding:0 4px;line-height:1.4}
+.wcol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;height:100%}
+.wval{font-size:11px;font-weight:800;color:var(--text-2)}
+.wbar{width:100%;border-radius:7px 7px 3px 3px;min-height:4px;background:var(--accent);transition:height .45s cubic-bezier(.22,1,.36,1)}
+.wbar.over{background:var(--danger)}
+.wbar.none{background:var(--surface-2)}
+.wlabels{display:flex;gap:6px;margin-top:8px}
+.wlabels span{flex:1;text-align:center;font-size:12px;font-weight:700;color:var(--text-2)}
+.wlabels span.now{color:var(--accent);font-weight:800}
+
+.day{margin-bottom:20px}
+.day-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 4px 8px}
+.day-name{font-size:15px;font-weight:800}
+.day-sum{font-size:13px;font-weight:800;padding:4px 11px;border-radius:var(--r-pill);background:var(--accent-soft);color:var(--accent-ink)}
+.day-sum.over{background:var(--danger-soft);color:var(--danger)}
+.entry{background:var(--surface);border-radius:var(--r-md);padding:14px;margin-bottom:8px;box-shadow:var(--shadow-sm)}
+.entry-top{display:flex;align-items:center;gap:10px}
+.entry-time{font-size:13px;font-weight:700;color:var(--text-2);flex-shrink:0}
+.entry-total{font-size:18px;font-weight:800;flex:1;letter-spacing:-.01em}
+.entry-items{font-size:14px;color:var(--text-2);margin-top:6px;line-height:1.45}
+.entry-note{font-size:14px;margin-top:4px;font-style:italic;color:var(--text-2)}
+.iconbtn{width:var(--tap);height:var(--tap);border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;transition:transform .09s,background .15s}
+.iconbtn:active{transform:scale(.9)}
+
+/* ---------- settings ---------- */
+.rows{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow-sm);overflow:hidden}
+.row{display:flex;align-items:center;gap:14px;padding:14px 16px;min-height:60px;width:100%;text-align:left;border-bottom:1px solid var(--border)}
+.rows .row:last-child{border-bottom:none}
+.row-label{flex:1;min-width:0}
+.row-label b{display:block;font-size:16px;font-weight:700}
+.row-label small{display:block;font-size:13px;color:var(--text-2);margin-top:1px}
+.row select,.row input[type=number]{
+  min-height:44px;padding:8px 12px;border-radius:12px;border:1.5px solid var(--border);
+  background:var(--surface-2);font-size:16px;font-weight:700;text-align:right;max-width:150px;
+}
+.row input[type=number]{width:96px}
+.switch{position:relative;width:52px;height:32px;flex-shrink:0;border-radius:var(--r-pill);background:var(--surface-3,var(--surface-2));border:1.5px solid var(--border);transition:background .2s,border-color .2s}
+.switch::after{content:'';position:absolute;top:3px;left:3px;width:23px;height:23px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow-sm);transition:transform .22s cubic-bezier(.22,1,.36,1)}
+.switch[aria-checked=true]{background:var(--accent);border-color:var(--accent)}
+.switch[aria-checked=true]::after{transform:translateX(20px)}
+
+.field{margin-bottom:12px}
+.field label{display:block;font-size:14px;font-weight:700;margin-bottom:6px}
+.field input{width:100%;min-height:var(--tap);padding:12px 14px;font-size:16px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:12px}
+.grid2{display:grid;grid-template-columns:1fr 110px;gap:8px;margin-bottom:8px}
+.grid2 input{min-height:var(--tap);padding:11px 13px;font-size:16px;background:var(--surface-2);border:1.5px solid var(--border);border-radius:12px;width:100%}
+
+.notice{background:var(--warn-soft);color:var(--warn);padding:12px 14px;border-radius:var(--r-md);font-size:14px;font-weight:600;margin-bottom:12px}
+.empty{text-align:center;color:var(--text-2);padding:36px 20px;font-size:15px;line-height:1.6}
+.empty .big{font-size:34px;display:block;margin-bottom:10px}
+.pill-tag{font-size:11px;font-weight:800;background:var(--accent);color:var(--on-accent);padding:3px 8px;border-radius:var(--r-pill);letter-spacing:.03em}
+
+/* ---------- bottom nav ---------- */
+.nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:60;display:flex;
+  background:var(--surface);border-top:1px solid var(--border);
+  padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  padding:6px 2px;min-height:56px;color:var(--text-2);font-size:11.5px;font-weight:700;border-radius:14px;
+}
+.nav-icon{font-size:21px;line-height:1;padding:3px 18px;border-radius:var(--r-pill);transition:background .2s,transform .2s}
+.nav-btn[aria-selected=true]{color:var(--accent)}
+.nav-btn[aria-selected=true] .nav-icon{background:var(--accent-soft);transform:translateY(-1px)}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translate(-50%,14px);
+  z-index:100;display:flex;align-items:center;gap:12px;max-width:min(440px,calc(100vw - 32px));
+  background:#101a17;color:#fff;padding:12px 14px 12px 18px;border-radius:var(--r-pill);
+  font-size:15px;font-weight:700;box-shadow:0 8px 28px rgba(0,0,0,.32);
+  opacity:0;pointer-events:none;transition:opacity .24s,transform .24s;
+}
+[data-theme=dark] .toast{background:#e8f1ee;color:#101a17}
 .toast.show{opacity:1;transform:translate(-50%,0)}
-.toast.has-action{pointer-events:auto}
-.toast-action{background:rgba(255,255,255,.2);border:none;color:#fff;font-size:12px;font-weight:800;padding:5px 11px;border-radius:99px;cursor:pointer;flex-shrink:0}
+/* lift clear of the pending-meal bar while it is on screen */
+body:has(.pending.show) .toast{bottom:calc(178px + env(safe-area-inset-bottom))}
+.toast.act{pointer-events:auto}
+.toast-txt{flex:1;min-width:0}
+.toast-btn{flex-shrink:0;background:rgba(255,255,255,.16);color:inherit;font-size:14px;font-weight:800;padding:8px 14px;border-radius:var(--r-pill);min-height:36px}
+[data-theme=dark] .toast-btn{background:rgba(0,0,0,.12)}
 
-/* ---- logbook ---- */
-.day-group{margin-bottom:14px}
-.day-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:0 2px}
-.day-title{font-size:12.5px;font-weight:800}
-.day-total{font-size:11px;font-weight:800;padding:3px 10px;border-radius:99px}
-.day-total.ok{background:rgba(56,161,105,.16);color:var(--green)}
-.day-total.over{background:rgba(229,62,62,.16);color:var(--red)}
-.log-entry{background:var(--card);border-radius:12px;padding:10px 11px;margin-bottom:6px;font-size:12px;border:1px solid var(--border);box-shadow:0 2px 0 rgba(0,0,0,.03)}
-.log-top{display:flex;align-items:center;gap:8px}
-.log-time{font-size:10.5px;color:var(--muted);font-weight:700;flex-shrink:0}
-.log-total{font-size:14px;font-weight:800;flex:1}
-.log-items{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.45}
-.log-note{font-size:11.5px;margin-top:3px;font-style:italic}
-.icon-btn{background:var(--bg);border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:50%;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 0 rgba(0,0,0,.06);transition:transform .08s,box-shadow .08s}
-.icon-btn:active{transform:translateY(1px);box-shadow:none}
+.confetti{position:fixed;top:34%;width:8px;height:13px;z-index:200;pointer-events:none;border-radius:2px;animation:fall 1.15s cubic-bezier(.3,.8,.5,1) forwards}
+@keyframes fall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(260px) rotate(430deg)}}
 
-/* ---- week chart ---- */
-.week-chart{display:flex;align-items:flex-end;gap:5px;height:74px;position:relative;margin-top:14px}
-.goal-line{position:absolute;left:0;right:0;border-top:1.5px dashed var(--muted);opacity:.55}
-.goal-line span{position:absolute;right:0;top:-13px;font-size:9px;font-weight:800;color:var(--muted);background:var(--card);padding:0 3px}
-.week-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;height:100%}
-.week-bar{width:100%;border-radius:5px 5px 0 0;min-height:3px;background:var(--green);transition:height .25s}
-.week-bar.over{background:var(--red)}
-.week-bar.empty{background:var(--border)}
-.week-val{font-size:9px;font-weight:800;color:var(--muted)}
-.week-labels{display:flex;gap:5px;margin-top:4px}
-.week-labels span{flex:1;text-align:center;font-size:9.5px;font-weight:700;color:var(--muted)}
-.week-labels span.today{color:var(--primary)}
+.foot{text-align:center;font-size:12px;color:var(--text-2);padding:18px 0 6px}
 
-.action-bar{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));background:var(--card);padding:10px 14px;box-shadow:0 -4px 16px rgba(0,0,0,.1);border-top:1px solid var(--border);z-index:55;display:flex;gap:10px;align-items:center;transform:translateY(0);opacity:1;transition:transform .22s ease,opacity .22s ease}
-.action-bar.hidden{transform:translateY(100%);opacity:0;pointer-events:none}
-.action-clear{background:var(--bg);border:1px solid var(--border);color:var(--muted);width:38px;height:38px;border-radius:50%;font-size:15px;cursor:pointer;flex-shrink:0;box-shadow:0 2px 0 rgba(0,0,0,.06);transition:transform .08s,box-shadow .08s}
-.action-clear:active{transform:translateY(1px);box-shadow:none}
-.action-total{flex:1;min-width:0}
-.total-label{font-size:9.5px;font-weight:800;text-transform:uppercase;color:var(--muted);letter-spacing:.02em}
-.total-value{font-size:21px;font-weight:800;color:var(--text)}
-
-.btn{border:none;border-radius:12px;padding:10px 14px;font-size:12.5px;font-weight:800;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.1);transition:transform .08s,box-shadow .08s}
-.btn:active{transform:translateY(2px);box-shadow:0 0 0 rgba(0,0,0,0)}
-.btn-primary{background:var(--primary);color:#fff}
-.btn-secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}
-.btn-support{background:#f6ad55;color:#1a202c}
-.btn-small{padding:4px 7px;font-size:10px}
-.btn-chunky{--btn-shadow:var(--primary-dark);box-shadow:0 4px 0 var(--btn-shadow)}
-.btn-chunky:active{transform:translateY(3px);box-shadow:0 1px 0 var(--btn-shadow)}
-.btn-support.btn-chunky{--btn-shadow:#c2790e}
-
-select,input[type=number],input[type=text]{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);font-size:13px}
-#foodSearch{border-radius:999px;box-shadow:0 2px 0 rgba(0,0,0,.04)}
-.setting-row{margin-bottom:10px}
-.setting-row label{display:block;font-size:12px;font-weight:600;margin-bottom:3px}
-.version{font-size:10px;color:var(--muted);text-align:center;margin-top:14px}
-.lock-msg{background:#fefcbf;color:#744210;padding:9px;border-radius:9px;font-size:12px;margin-bottom:8px;border:1px solid #f6e05e}
-.pro-badge{background:var(--primary);color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:4px}
-
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);display:flex;border-top:1px solid var(--border);padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:60;box-shadow:0 -2px 10px rgba(0,0,0,.06)}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;padding:5px 2px;color:var(--muted);font-size:10px;font-weight:700;border-radius:12px}
-.nav-btn .nav-icon{font-size:19px;line-height:1;padding:3px 16px;border-radius:12px;transition:background .15s,transform .15s}
-.nav-btn.active{color:var(--primary)}
-.nav-btn.active .nav-icon{background:rgba(43,108,176,.15);transform:scale(1.06)}
-
-.confetti-piece{position:fixed;top:38%;width:7px;height:11px;z-index:200;pointer-events:none;animation:confettiFall 1.1s ease-out forwards;border-radius:2px}
-@keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(240px) rotate(420deg)}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
 </style>
 </head>
 <body>
-<header>
-  <div class="header-row">
-    <div class="brand">
-      <span class="app-badge">🥑</span>
-      <h1 id="appTitle">Visual Keto Log</h1>
-    </div>
-    <div class="header-right">
-      <span class="streak-badge" id="streakBadge" title="Dagen op rij onder je doel">🔥 0</span>
-      <span class="date" id="todayDate"></span>
-    </div>
-  </div>
-</header>
 
-<div class="container">
-  <div id="panel-tracker" class="panel active">
-    <div class="status-card">
-      <div class="status-label">Ketose (laatste 7 dagen)</div>
-      <div class="ketosis-bar"><div class="ketosis-marker" id="ketosisMarker" style="left:5%"></div></div>
-      <div id="ketosisStatus" class="ketosis-status" style="color:var(--green)">🥑 Diep in ketose</div>
-      <div class="recent-info" id="recentInfo">Laatste 7 dagen: 0g</div>
-      <div class="goal-row"><span>Doel vandaag</span><span id="goalText">0 / 30g</span></div>
-      <div class="goal-bar"><div class="goal-fill" id="goalFill" style="width:0%"></div></div>
-      <div class="recent-info" id="budgetInfo" style="margin-top:6px"></div>
+<div class="wrap">
+  <header class="topbar">
+    <div class="topbar-row">
+      <div>
+        <div class="greeting" id="greeting">Hallo</div>
+        <div class="subgreeting" id="todayDate"></div>
+      </div>
+      <div class="streak" id="streak" title="Dagen op rij binnen je doel"><span>🔥</span><span id="streakNum">0</span></div>
+    </div>
+  </header>
+
+  <!-- ============ VANDAAG ============ -->
+  <main id="panel-today" class="panel active" role="tabpanel" aria-labelledby="tab-today">
+    <div class="card">
+      <div class="hero">
+        <div class="ring-wrap">
+          <svg class="ring" width="132" height="132" viewBox="0 0 132 132" aria-hidden="true">
+            <circle class="ring-track" cx="66" cy="66" r="56" fill="none" stroke-width="13"/>
+            <circle class="ring-fill" id="ringFill" cx="66" cy="66" r="56" fill="none" stroke-width="13"
+                    stroke-dasharray="351.86" stroke-dashoffset="351.86"/>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-num" id="ringNum">0</div>
+            <div class="ring-unit" id="ringUnit">van 30g</div>
+          </div>
+        </div>
+        <div class="hero-side">
+          <span class="hero-status" id="heroStatus">🥑 Diep in ketose</span>
+          <p class="hero-msg" id="heroMsg"></p>
+        </div>
+      </div>
     </div>
 
-    <div id="selectedChips" class="selected-chips" style="display:none"></div>
-    <input type="text" id="foodSearch" placeholder="🔍 Zoek gerecht..." style="margin-bottom:8px">
+    <div id="quickWrap" style="display:none">
+      <div class="section-head">
+        <span class="section-title">Snel loggen</span>
+        <span class="card-sub" style="font-size:13px">jouw vaste maaltijden</span>
+      </div>
+      <div class="quick" id="quickList"></div>
+    </div>
 
-    <div id="customSection"></div>
+    <div class="section-head">
+      <span class="section-title">Vandaag gegeten</span>
+      <button class="section-link" data-goto="history">Alles bekijken</button>
+    </div>
+    <div id="todayMeals"></div>
+  </main>
+
+  <!-- ============ LOGGEN ============ -->
+  <main id="panel-log" class="panel" role="tabpanel" aria-labelledby="tab-log">
+    <div class="search">
+      <span class="search-icon" aria-hidden="true">🔍</span>
+      <input type="search" id="search" placeholder="Zoek gerecht" aria-label="Zoek gerecht" autocomplete="off">
+    </div>
     <div id="foodList"></div>
-
-    <details class="free-card-details">
-      <summary>0g items 🥩🐟🥚 (tik voor meer)</summary>
-      <p class="desc">Vlees, vis, ei, kaas, ui, sla, broccoli, boter, olie. Onbeperkt, hoeft niet gelogd te worden.</p>
-    </details>
-
-    <input type="text" id="mealNote" placeholder="+ Notitie (optioneel)" style="margin-bottom:4px">
-  </div>
-
-  <div id="panel-log" class="panel">
-    <div class="card">
-      <h2>Deze week</h2>
-      <p class="desc" id="weekSummary"></p>
-      <div class="week-chart" id="weekChart"></div>
-      <div class="week-labels" id="weekLabels"></div>
+    <div class="card" style="margin-top:4px">
+      <div class="card-title">Onbeperkt eten 🥩🐟🥚</div>
+      <p class="card-sub">Vlees, vis, ei, kaas, ui, sla, broccoli, boter, olie. Vrijwel 0g koolhydraten — die hoef je niet te loggen.</p>
     </div>
-    <div id="logLimitMsg"></div>
-    <div id="logList"></div>
-    <div style="margin:10px 0 4px">
-      <button class="btn btn-secondary" style="width:100%" onclick="exportLog()" id="exportBtn">Exporteer log</button>
+    <div class="field" style="margin-top:12px">
+      <label for="note">Notitie bij deze maaltijd</label>
+      <input type="text" id="note" placeholder="Bijv. avondeten bij oma" autocomplete="off">
     </div>
-  </div>
+  </main>
 
-  <div id="panel-settings" class="panel">
+  <!-- ============ HISTORIE ============ -->
+  <main id="panel-history" class="panel" role="tabpanel" aria-labelledby="tab-history">
     <div class="card">
-      <div class="setting-row">
-        <label>Land <span id="proCountryBadge"></span></label>
-        <select id="countrySelect" onchange="changeCountry()"></select>
-      </div>
-      <div class="setting-row">
-        <label>Dagelijkse doel (g)</label>
-        <input type="number" id="carbGoal" value="30" min="10" max="120" onchange="updateGoal()">
-      </div>
-      <div class="setting-row">
-        <button class="btn btn-secondary" style="width:100%" onclick="toggleTheme()">Donkere modus</button>
+      <div class="card-title">Deze week</div>
+      <p class="card-sub" id="weekSummary"></p>
+      <div class="week">
+        <div class="week-bars" id="weekBars"></div>
+        <div class="wlabels" id="weekLabels"></div>
       </div>
     </div>
+    <div id="logNotice"></div>
+    <div id="historyList"></div>
+    <button class="btn btn-outline btn-block" id="exportBtn" style="margin-top:12px">Exporteer als CSV</button>
+  </main>
 
-    <div class="card">
-      <h2 style="margin-bottom:6px">Eigen gerecht toevoegen</h2>
-      <div id="customLimitMsg" style="font-size:11px;color:var(--muted);margin-bottom:6px"></div>
-      <input type="text" id="customName" placeholder="Naam gerecht" style="margin-bottom:6px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:6px">
-        <input type="text" id="p1label" placeholder="Portie 1 (bijv. Klein)">
-        <input type="number" id="p1carbs" placeholder="g koolh.">
-        <input type="text" id="p2label" placeholder="Portie 2">
-        <input type="number" id="p2carbs" placeholder="g koolh.">
-        <input type="text" id="p3label" placeholder="Portie 3">
-        <input type="number" id="p3carbs" placeholder="g koolh.">
-        <input type="text" id="p4label" placeholder="Portie 4">
-        <input type="number" id="p4carbs" placeholder="g koolh.">
+  <!-- ============ MEER ============ -->
+  <main id="panel-more" class="panel" role="tabpanel" aria-labelledby="tab-more">
+    <div class="section-head" style="margin-top:8px"><span class="section-title">Instellingen</span></div>
+    <div class="rows">
+      <div class="row">
+        <div class="row-label"><b>Dagdoel</b><small>Koolhydraten per dag</small></div>
+        <input type="number" id="goalInput" min="10" max="150" step="5" inputmode="numeric" aria-label="Dagdoel in gram">
       </div>
-      <button class="btn btn-primary btn-chunky" style="width:100%" onclick="addCustomFood()">Toevoegen</button>
+      <div class="row">
+        <div class="row-label"><b>Land</b><small id="countryHint">Bepaalt welke gerechten je ziet</small></div>
+        <select id="country" aria-label="Land"></select>
+      </div>
+      <button class="row" id="themeRow" role="switch" aria-checked="false">
+        <div class="row-label"><b>Donkere modus</b><small>Prettiger 's avonds</small></div>
+        <span class="switch" id="themeSwitch" aria-hidden="true"></span>
+      </button>
     </div>
 
-    <div class="card" id="proCard">
-      <h2 style="margin-bottom:6px">Pro versie</h2>
-      <p class="desc" id="proDesc" style="margin-bottom:8px"></p>
-      <button class="btn btn-support btn-chunky" style="width:100%;margin-bottom:8px" onclick="togglePro()">Pro aan/uit</button>
-      <button class="btn btn-secondary" style="width:100%" onclick="openSupport()">Betaalpagina</button>
+    <div class="section-head"><span class="section-title">Mijn lijst</span></div>
+    <p class="card-sub" style="margin:0 4px 10px">Zet uit wat je nooit eet. Je kunt het hier altijd weer aanzetten — er verdwijnt niets per ongeluk.</p>
+    <div class="rows" id="visibilityRows"></div>
+
+    <div class="section-head"><span class="section-title">Eigen gerecht</span></div>
+    <div class="card">
+      <p class="card-sub" id="customHint" style="margin-bottom:12px"></p>
+      <div class="field">
+        <label for="cName">Naam</label>
+        <input type="text" id="cName" placeholder="Bijv. Moeders lasagne" autocomplete="off">
+      </div>
+      <label style="display:block;font-size:14px;font-weight:700;margin-bottom:6px">Porties en koolhydraten</label>
+      <div class="grid2">
+        <input type="text" id="cL1" placeholder="Klein" autocomplete="off" aria-label="Naam portie 1">
+        <input type="number" id="cG1" placeholder="g" inputmode="numeric" aria-label="Gram portie 1">
+        <input type="text" id="cL2" placeholder="Normaal" autocomplete="off" aria-label="Naam portie 2">
+        <input type="number" id="cG2" placeholder="g" inputmode="numeric" aria-label="Gram portie 2">
+        <input type="text" id="cL3" placeholder="Groot" autocomplete="off" aria-label="Naam portie 3">
+        <input type="number" id="cG3" placeholder="g" inputmode="numeric" aria-label="Gram portie 3">
+      </div>
+      <button class="btn btn-primary btn-block" id="addCustom" style="margin-top:10px">Toevoegen</button>
     </div>
 
-    <div class="card" id="hiddenFoodsCard" style="display:none">
-      <h2 style="margin-bottom:6px">Verborgen standaard items (Pro)</h2>
-      <p class="desc">Zo bouw je jouw eigen samengestelde lijst: verberg wat je niet nodig hebt, tik op ↺ om terug te halen.</p>
-      <div id="hiddenFoodsList" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    <div class="section-head"><span class="section-title">Pro</span></div>
+    <div class="card">
+      <p class="card-sub" id="proText" style="margin-bottom:14px"></p>
+      <button class="btn btn-primary btn-block" id="proToggle" style="margin-bottom:8px">Pro aan/uit</button>
+      <button class="btn btn-quiet btn-block" id="supportBtn">Naar de betaalpagina</button>
     </div>
 
     <div class="card">
-      <button class="btn btn-secondary" style="width:100%" onclick="clearAllData()">Alles wissen</button>
+      <button class="btn btn-danger btn-block" id="wipe">Alle gegevens wissen</button>
     </div>
-    <div class="version">Visual Keto Log · v3.1</div>
+    <p class="foot">Visual Keto Log · v4.0<br>Alles blijft op je eigen telefoon.</p>
+  </main>
+</div>
+
+<!-- pending meal -->
+<div class="pending" id="pending" role="region" aria-label="Nog niet gelogde maaltijd">
+  <div class="pending-inner">
+    <button class="pending-clear" id="clearPending" aria-label="Selectie wissen">✕</button>
+    <div class="pending-info">
+      <div class="pending-label">Deze maaltijd</div>
+      <div class="pending-total" id="pendingTotal">0g</div>
+      <div class="pending-items" id="pendingItems"></div>
+    </div>
+    <button class="btn btn-primary" id="saveMeal">Loggen</button>
   </div>
 </div>
 
-<div id="actionBar" class="action-bar hidden">
-  <button class="action-clear" onclick="resetToday()" title="Wissen">✕</button>
-  <div class="action-total">
-    <div class="total-label">Deze maaltijd</div>
-    <div class="total-value" id="total">0g</div>
-  </div>
-  <button class="btn btn-primary btn-chunky" onclick="logMeal()">Loggen</button>
-</div>
-
-<nav class="bottom-nav">
-  <button class="nav-btn active" data-tab="tracker"><span class="nav-icon">🍽️</span><span>Tracker</span></button>
-  <button class="nav-btn" data-tab="log"><span class="nav-icon">📋</span><span>Logboek</span></button>
-  <button class="nav-btn" data-tab="settings"><span class="nav-icon">⚙️</span><span>Instellingen</span></button>
+<nav class="nav" role="tablist" aria-label="Hoofdnavigatie">
+  <button class="nav-btn" id="tab-today"   role="tab" aria-selected="true"  data-tab="today"><span class="nav-icon" aria-hidden="true">🥑</span><span>Vandaag</span></button>
+  <button class="nav-btn" id="tab-log"     role="tab" aria-selected="false" data-tab="log"><span class="nav-icon" aria-hidden="true">➕</span><span>Loggen</span></button>
+  <button class="nav-btn" id="tab-history" role="tab" aria-selected="false" data-tab="history"><span class="nav-icon" aria-hidden="true">📊</span><span>Historie</span></button>
+  <button class="nav-btn" id="tab-more"    role="tab" aria-selected="false" data-tab="more"><span class="nav-icon" aria-hidden="true">⚙️</span><span>Meer</span></button>
 </nav>
 
 <script>
+'use strict';
+
+/* ============================================================
+   Data
+   ============================================================ */
 const BASE_FOODS = {
   ba: [
-    {id:'burek',name:'Burek 🥮',desc:'Kaas/vlees/aardappel',portions:[{label:'Niet',carbs:0},{label:'Happen',carbs:15},{label:'½ punt',carbs:32},{label:'Heel',carbs:65}]},
-    {id:'lepinja',name:'Lepinja 🥖',desc:'Platbrood',portions:[{label:'Niet',carbs:0},{label:'¼',carbs:12},{label:'½',carbs:25},{label:'Heel',carbs:50}]},
-    {id:'potato',name:'Ispod sača 🥔',desc:'Aardappelen',portions:[{label:'Niet',carbs:0},{label:'Schep',carbs:15},{label:'Vuist',carbs:30},{label:'Bord',carbs:50}]},
-    {id:'pita',name:'Andere pite 🧀',desc:'Sirnica/zeljanica',portions:[{label:'Niet',carbs:0},{label:'Klein',carbs:20},{label:'Medium',carbs:40},{label:'Groot',carbs:65}]},
-    {id:'sarma',name:'Sarma 🥬',desc:'Gevulde kool',portions:[{label:'Niet',carbs:0},{label:'1-2',carbs:12},{label:'3-4',carbs:25},{label:'Bord',carbs:40}]},
-    {id:'ajvar',name:'Ajvar 🌶️',desc:'Paprika-spread',portions:[{label:'Niet',carbs:0},{label:'1 el',carbs:4},{label:'2 el',carbs:8},{label:'Rijk',carbs:15}]},
-    {id:'fruit',name:'Fruit 🍎',desc:'Appel/peer/banaan',portions:[{label:'Niet',carbs:0},{label:'Klein',carbs:10},{label:'Middel',carbs:18},{label:'Groot',carbs:30}]}
+    {id:'burek',    name:'Burek',        emoji:'🥮', desc:'Kaas / vlees / aardappel', portions:[{label:'Happen',carbs:15},{label:'½ punt',carbs:32},{label:'Heel',carbs:65}]},
+    {id:'lepinja',  name:'Lepinja',      emoji:'🥖', desc:'Platbrood',                portions:[{label:'¼',carbs:12},{label:'½',carbs:25},{label:'Heel',carbs:50}]},
+    {id:'potato',   name:'Ispod sača',   emoji:'🥔', desc:'Aardappelen',              portions:[{label:'Schep',carbs:15},{label:'Vuist',carbs:30},{label:'Bord',carbs:50}]},
+    {id:'pita',     name:'Andere pite',  emoji:'🧀', desc:'Sirnica / zeljanica',      portions:[{label:'Klein',carbs:20},{label:'Medium',carbs:40},{label:'Groot',carbs:65}]},
+    {id:'sarma',    name:'Sarma',        emoji:'🥬', desc:'Gevulde kool',             portions:[{label:'1-2',carbs:12},{label:'3-4',carbs:25},{label:'Bord',carbs:40}]},
+    {id:'ajvar',    name:'Ajvar',        emoji:'🌶️', desc:'Paprika-spread',           portions:[{label:'1 el',carbs:4},{label:'2 el',carbs:8},{label:'Rijk',carbs:15}]},
+    {id:'fruit',    name:'Fruit',        emoji:'🍎', desc:'Appel / peer / banaan',    portions:[{label:'Klein',carbs:10},{label:'Middel',carbs:18},{label:'Groot',carbs:30}]}
   ],
   nl: [
-    {id:'brood',name:'Brood 🍞',desc:'Snee',portions:[{label:'Niet',carbs:0},{label:'½ snee',carbs:8},{label:'1 snee',carbs:16},{label:'2 sneetjes',carbs:32}]},
-    {id:'aardappel',name:'Aardappelen 🥔',desc:'Gekookt/gebakken',portions:[{label:'Niet',carbs:0},{label:'Ei',carbs:8},{label:'Muis',carbs:18},{label:'Vuist',carbs:35}]},
-    {id:'pasta',name:'Pasta 🍝',desc:'Gekookt',portions:[{label:'Niet',carbs:0},{label:'Klein',carbs:12},{label:'Normaal',carbs:30},{label:'Groot',carbs:50}]},
-    {id:'rijst',name:'Rijst 🍚',desc:'Gekookt',portions:[{label:'Niet',carbs:0},{label:'Klein',carbs:15},{label:'Normaal',carbs:35},{label:'Groot',carbs:55}]},
-    {id:'pannenkoek',name:'Pannenkoek 🥞',desc:'Naturel',portions:[{label:'Niet',carbs:0},{label:'½',carbs:10},{label:'1 stuk',carbs:20},{label:'2 stuks',carbs:40}]},
-    {id:'friet',name:'Patat 🍟',desc:'Gebakken',portions:[{label:'Niet',carbs:0},{label:'Klein',carbs:20},{label:'Normaal',carbs:40},{label:'Groot',carbs:60}]},
-    {id:'havermout',name:'Havermout 🥣',desc:'',portions:[{label:'Niet',carbs:0},{label:'Klein',carbs:10},{label:'Normaal',carbs:20},{label:'Groot',carbs:35}]},
-    {id:'fruit',name:'Fruit 🍎',desc:'Appel/peer/banaan',portions:[{label:'Niet',carbs:0},{label:'Klein',carbs:10},{label:'Middel',carbs:18},{label:'Groot',carbs:30}]}
+    {id:'brood',      name:'Brood',       emoji:'🍞', desc:'Snee',                  portions:[{label:'½ snee',carbs:8},{label:'1 snee',carbs:16},{label:'2 sneetjes',carbs:32}]},
+    {id:'aardappel',  name:'Aardappelen', emoji:'🥔', desc:'Gekookt / gebakken',    portions:[{label:'Ei',carbs:8},{label:'Muis',carbs:18},{label:'Vuist',carbs:35}]},
+    {id:'pasta',      name:'Pasta',       emoji:'🍝', desc:'Gekookt',               portions:[{label:'Klein',carbs:12},{label:'Normaal',carbs:30},{label:'Groot',carbs:50}]},
+    {id:'rijst',      name:'Rijst',       emoji:'🍚', desc:'Gekookt',               portions:[{label:'Klein',carbs:15},{label:'Normaal',carbs:35},{label:'Groot',carbs:55}]},
+    {id:'pannenkoek', name:'Pannenkoek',  emoji:'🥞', desc:'Naturel',               portions:[{label:'½',carbs:10},{label:'1 stuk',carbs:20},{label:'2 stuks',carbs:40}]},
+    {id:'friet',      name:'Patat',       emoji:'🍟', desc:'Gebakken',              portions:[{label:'Klein',carbs:20},{label:'Normaal',carbs:40},{label:'Groot',carbs:60}]},
+    {id:'havermout',  name:'Havermout',   emoji:'🥣', desc:'Met melk of water',     portions:[{label:'Klein',carbs:10},{label:'Normaal',carbs:20},{label:'Groot',carbs:35}]},
+    {id:'fruit',      name:'Fruit',       emoji:'🍎', desc:'Appel / peer / banaan', portions:[{label:'Klein',carbs:10},{label:'Middel',carbs:18},{label:'Groot',carbs:30}]}
   ]
 };
-
-let isPro = false;
-let currentCountry = 'ba';
-let carbGoal = 30;
-let values = {};
-let customFoods = {ba: [], nl: []};
-let hiddenFoods = {ba: [], nl: []};
+const COUNTRIES = [{v:'ba',n:'🇧🇦 Bosnië'},{v:'nl',n:'🇳🇱 Nederland'}];
 const SUPPORT_URL = 'https://ko-fi.com/';
+const RING_CIRC = 2 * Math.PI * 56;
 
-// Local calendar date (YYYY-MM-DD). Deliberately not toISOString(), which uses
-// UTC and would file a late-evening meal under tomorrow.
-function dateStr(d) {
+let isPro = false, currentCountry = 'ba', carbGoal = 30;
+let values = {};                       // pending meal: foodId -> grams
+let customFoods = {ba:[], nl:[]};
+let hiddenFoods = {ba:[], nl:[]};
+
+const $ = id => document.getElementById(id);
+
+/* ============================================================
+   Helpers
+   ============================================================ */
+// Local calendar date. Not toISOString(), which is UTC and would file a
+// late-evening meal under tomorrow.
+function dateStr(d){
   d = d || new Date();
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
+function daysAgoStr(n){ const d = new Date(); d.setDate(d.getDate()-n); return dateStr(d); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-function daysAgoStr(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return dateStr(d);
-}
-
-function readLog() {
-  try { return JSON.parse(localStorage.getItem('ketoLog') || '[]'); } catch(e) { return []; }
-}
-
-function writeLog(log) {
-  // Entries are never pruned by tier any more (upgrading to Pro should reveal
-  // your history, not find it deleted) — just keep localStorage bounded.
-  if (log.length > 2000) log = log.slice(0, 2000);
+function readLog(){ try { return JSON.parse(localStorage.getItem('ketoLog') || '[]'); } catch(e){ return []; } }
+function writeLog(log){
+  // Nothing is pruned by tier — upgrading to Pro should reveal your history,
+  // not find it deleted. Just keep localStorage bounded.
+  if (log.length > 2000) log = log.slice(0,2000);
   localStorage.setItem('ketoLog', JSON.stringify(log));
 }
-
-// Free tier only shows the last 3 days: today plus the two before it.
-function visibleLog(log) {
+// Free shows the last 3 days: today plus the two before it.
+function visibleLog(log){
   if (isPro) return log;
   const cutoff = daysAgoStr(2);
   return log.filter(e => e.date >= cutoff);
 }
+function sumValues(o){ return Object.keys(o).reduce((s,k) => s + (o[k]||0), 0); }
 
+function getAllFoods(){ return (customFoods[currentCountry]||[]).concat(BASE_FOODS[currentCountry]||[]); }
+function getFood(id){ return getAllFoods().find(f => f.id === id) || null; }
+function foodLabel(id){ const f = getFood(id); return f ? (f.emoji ? f.emoji+' '+f.name : f.name) : id; }
+
+/* ---------- toast ---------- */
 let toastTimer = null;
-function toast(msg, action) {
-  let el = document.getElementById('toastEl');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'toastEl';
-    el.className = 'toast';
-    document.body.appendChild(el);
-  }
-  el.textContent = msg;
-  el.classList.toggle('has-action', !!action);
-  if (action) {
-    const btn = document.createElement('button');
-    btn.className = 'toast-action';
-    btn.textContent = action.label;
-    btn.onclick = function() {
-      el.classList.remove('show');
-      action.fn();
-    };
-    el.appendChild(btn);
+function toast(msg, action){
+  let el = $('toastEl');
+  if (!el){ el = document.createElement('div'); el.id='toastEl'; el.className='toast';
+            el.setAttribute('role','status'); el.setAttribute('aria-live','polite'); document.body.appendChild(el); }
+  el.innerHTML = '';
+  const txt = document.createElement('span'); txt.className='toast-txt'; txt.textContent = msg; el.appendChild(txt);
+  el.classList.toggle('act', !!action);
+  if (action){
+    const b = document.createElement('button');
+    b.className='toast-btn'; b.textContent = action.label;
+    b.onclick = () => { el.classList.remove('show'); action.fn(); };
+    el.appendChild(b);
   }
   clearTimeout(toastTimer);
   requestAnimationFrame(() => el.classList.add('show'));
-  toastTimer = setTimeout(() => el.classList.remove('show'), action ? 5000 : 1800);
+  toastTimer = setTimeout(() => el.classList.remove('show'), action ? 5500 : 2200);
 }
 
-function confetti() {
-  const colors = ['#2b6cb0', '#38a169', '#d69e2e', '#8854d0', '#ee5253'];
-  for (let i = 0; i < 16; i++) {
+function confetti(){
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colors = ['#0f7f66','#3cbf96','#e0b341','#e8734a','#5b8def'];
+  for (let i=0;i<18;i++){
     const p = document.createElement('div');
-    p.className = 'confetti-piece';
-    p.style.left = (42 + Math.random() * 16) + '%';
+    p.className = 'confetti';
+    p.style.left = (40 + Math.random()*20) + '%';
     p.style.background = colors[i % colors.length];
-    p.style.animationDelay = (Math.random() * 0.15) + 's';
-    p.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
+    p.style.animationDelay = (Math.random()*0.18) + 's';
     document.body.appendChild(p);
-    setTimeout(() => p.remove(), 1400);
+    setTimeout(() => p.remove(), 1500);
   }
 }
 
-function init() {
-  try {
-    document.getElementById('todayDate').textContent = new Date().toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'});
-    isPro = localStorage.getItem('ketoPro') === 'true';
-    currentCountry = localStorage.getItem('ketoCountry') || 'ba';
-    carbGoal = parseInt(localStorage.getItem('ketoGoal')) || 30;
-    document.getElementById('carbGoal').value = carbGoal;
-    if (localStorage.getItem('ketoTheme') === 'dark') document.documentElement.setAttribute('data-theme','dark');
-
-    try {
-      customFoods = JSON.parse(localStorage.getItem('ketoCustom') || '{"ba":[],"nl":[]}');
-    } catch(e) { customFoods = {ba:[], nl:[]}; }
-
-    try {
-      hiddenFoods = JSON.parse(localStorage.getItem('ketoHidden') || '{"ba":[],"nl":[]}');
-    } catch(e) { hiddenFoods = {ba:[], nl:[]}; }
-
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('.nav-btn').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        this.classList.add('active');
-        document.getElementById('panel-' + this.dataset.tab).classList.add('active');
-        if (this.dataset.tab === 'log') updateLogLimitMsg();
-        if (this.dataset.tab === 'settings') updateCustomLimitMsg();
-        updateActionBarVisibility();
-      });
-    });
-
-    bindFoodListEvents('foodList');
-    bindFoodListEvents('customSection');
-
-    document.getElementById('selectedChips').addEventListener('click', function(e) {
-      const btn = e.target.closest('.chip-x');
-      if (!btn) return;
-      resetPortion(btn.dataset.id);
-    });
-
-    document.getElementById('foodSearch').addEventListener('input', renderFoods);
-
-    document.getElementById('mealNote').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') logMeal();
-    });
-
-    document.getElementById('customName').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') addCustomFood();
-    });
-
-    updateCountrySelect();
-    updateProUI();
-    updateHiddenFoodsUI();
-    renderAllFoods();
-    calculate();
-    loadLog();
-    updateStreakBadge();
-  } catch(err) {
-    console.error(err);
-    alert('Startfout');
-  }
+/* ============================================================
+   Totals
+   ============================================================ */
+function todayLogged(){
+  const t = dateStr();
+  return readLog().filter(e => e.date === t).reduce((s,e) => s + (e.total||0), 0);
 }
 
-function bindFoodListEvents(containerId) {
-  document.getElementById(containerId).addEventListener('click', function(e) {
-    const btn = e.target.closest('.portion-btn');
-    if (btn) {
-      const id = btn.parentElement.dataset.id;
-      const carbs = parseInt(btn.dataset.carbs);
-      values[id] = carbs;
-      btn.parentElement.querySelectorAll('.portion-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      updateRowBadge(id);
-      calculate();
-      return;
-    }
-    const toggle = e.target.closest('.food-row-toggle');
-    if (toggle) toggleFoodRow(toggle.closest('.food-row'));
-  });
+// Average grams per day over the last 7 days. Ketosis is a per-day matter, so
+// a 7-day sum would push a perfectly on-target week straight out of range.
+function dailyAverage(pending){
+  const cutoff = daysAgoStr(6), byDay = {};
+  readLog().forEach(e => { if (e.date >= cutoff) byDay[e.date] = (byDay[e.date]||0) + (e.total||0); });
+  const t = dateStr();
+  byDay[t] = (byDay[t]||0) + (pending||0);
+  const keys = Object.keys(byDay);
+  if (!keys.length) return 0;
+  return Math.round(keys.reduce((s,d) => s + byDay[d], 0) / keys.length);
 }
 
-function toggleFoodRow(row) {
-  const wasExpanded = row.classList.contains('expanded');
-  document.querySelectorAll('#foodList .food-row.expanded, #customSection .food-row.expanded').forEach(r => r.classList.remove('expanded'));
-  if (!wasExpanded) row.classList.add('expanded');
+function ketosisState(avg){
+  if (avg <= 25)  return {txt:'🥑 Diep in ketose',        cls:''};
+  if (avg <= 50)  return {txt:'🙂 Milde ketose',          cls:'warn'};
+  if (avg <= 100) return {txt:'⚠️ Waarschijnlijk eruit',  cls:'over'};
+  return              {txt:'🚫 Uit ketose',               cls:'over'};
 }
 
-function updateRowBadge(id) {
-  const row = document.querySelector('.food-row[data-food-id="' + CSS.escape(id) + '"]');
-  if (!row) return;
-  const toggle = row.querySelector('.food-row-toggle');
-  let badge = toggle.querySelector('.food-badge');
-  const v = values[id] || 0;
-  if (v > 0) {
-    if (!badge) {
-      badge = document.createElement('span');
-      badge.className = 'food-badge';
-      toggle.insertBefore(badge, toggle.querySelector('.hide-btn') || toggle.querySelector('.chev'));
-    }
-    badge.textContent = v + 'g';
-  } else if (badge) {
-    badge.remove();
-  }
-}
-
-function getAllFoods() {
-  const base = BASE_FOODS[currentCountry] || [];
-  const customs = customFoods[currentCountry] || [];
-  return customs.concat(base);
-}
-
-function getFoodName(id) {
-  const f = getAllFoods().find(x => x.id === id);
-  return f ? f.name : id;
-}
-
-function renderAllFoods() {
-  renderCustomSection();
-  renderFoods();
-}
-
-function renderCustomSection() {
-  const section = document.getElementById('customSection');
-  const customs = customFoods[currentCountry] || [];
-  if (customs.length === 0) {
-    section.innerHTML = '';
-    return;
-  }
-  let html = '';
-  customs.forEach(function(f) {
-    if (values[f.id] === undefined) values[f.id] = 0;
-    let btns = '';
-    f.portions.forEach(function(p) {
-      const active = values[f.id] === p.carbs ? ' active' : '';
-      btns += '<button class="portion-btn' + active + '" data-carbs="' + p.carbs + '">' + p.label + '</button>';
-    });
-    const badge = values[f.id] > 0 ? '<span class="food-badge">' + values[f.id] + 'g</span>' : '';
-    html += '<div class="food-row custom-row" data-food-id="' + f.id + '">' +
-      '<div class="food-row-toggle" data-id="' + f.id + '">' +
-        '<span class="food-name">' + f.name + '</span>' + badge +
-        '<button class="hide-btn" onclick="event.stopPropagation();removeCustom(\'' + f.id + '\')" title="Verwijderen">×</button>' +
-        '<span class="chev">▾</span>' +
-      '</div>' +
-      '<div class="food-row-body"><div class="food-row-body-inner">' +
-        '<div class="portion-btns" data-id="' + f.id + '">' + btns + '</div>' +
-      '</div></div></div>';
-  });
-  section.innerHTML = html;
-}
-
-function renderFoods() {
-  const list = document.getElementById('foodList');
-  const hidden = hiddenFoods[currentCountry] || [];
-  const term = (document.getElementById('foodSearch').value || '').toLowerCase().trim();
-  let foods = (BASE_FOODS[currentCountry] || []).filter(f => hidden.indexOf(f.id) === -1);
-  if (term) {
-    foods = foods.filter(f => f.name.toLowerCase().indexOf(term) !== -1 || f.desc.toLowerCase().indexOf(term) !== -1);
-  }
-  if (!foods.length) {
-    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:16px;font-size:12px">Geen gerechten gevonden</div>';
-    return;
-  }
-  let html = '';
-  foods.forEach(function(f) {
-    if (values[f.id] === undefined) values[f.id] = 0;
-    let btns = '';
-    f.portions.forEach(function(p) {
-      const active = values[f.id] === p.carbs ? ' active' : '';
-      btns += '<button class="portion-btn' + active + '" data-carbs="' + p.carbs + '">' + p.label + '</button>';
-    });
-    const badge = values[f.id] > 0 ? '<span class="food-badge">' + values[f.id] + 'g</span>' : '';
-    const hideBtn = isPro ? '<button class="hide-btn" onclick="event.stopPropagation();hideFood(\'' + f.id + '\')" title="Verbergen">−</button>' : '';
-    html += '<div class="food-row" data-food-id="' + f.id + '">' +
-      '<div class="food-row-toggle" data-id="' + f.id + '">' +
-        '<span class="food-name">' + f.name + '</span>' + badge + hideBtn +
-        '<span class="chev">▾</span>' +
-      '</div>' +
-      '<div class="food-row-body"><div class="food-row-body-inner">' +
-        '<p class="food-desc">' + f.desc + '</p>' +
-        '<div class="portion-btns" data-id="' + f.id + '">' + btns + '</div>' +
-      '</div></div></div>';
-  });
-  list.innerHTML = html;
-}
-
-function resetPortion(id) {
-  values[id] = 0;
-  const container = document.querySelector('.portion-btns[data-id="' + CSS.escape(id) + '"]');
-  if (container) {
-    container.querySelectorAll('.portion-btn').forEach(b => b.classList.remove('active'));
-    const zeroBtn = container.querySelector('[data-carbs="0"]');
-    if (zeroBtn) zeroBtn.classList.add('active');
-  }
-  updateRowBadge(id);
-  calculate();
-}
-
-function updateSelectedChips() {
-  const wrap = document.getElementById('selectedChips');
-  const entries = Object.keys(values).filter(k => values[k] > 0).map(k => [k, values[k]]);
-  if (!entries.length) {
-    wrap.style.display = 'none';
-    wrap.innerHTML = '';
-    return;
-  }
-  wrap.style.display = 'flex';
-  wrap.innerHTML = entries.map(([id, v]) =>
-    '<span class="chip">' + getFoodName(id) + ' <b>' + v + 'g</b><button class="chip-x" data-id="' + id + '">×</button></span>'
-  ).join('');
-}
-
-function hideFood(id) {
-  if (!isPro) return;
-  hiddenFoods[currentCountry] = hiddenFoods[currentCountry] || [];
-  if (hiddenFoods[currentCountry].indexOf(id) === -1) hiddenFoods[currentCountry].push(id);
-  localStorage.setItem('ketoHidden', JSON.stringify(hiddenFoods));
-  delete values[id];
-  renderFoods();
-  updateHiddenFoodsUI();
-  calculate();
-  toast('Verborgen — herstel in Instellingen');
-}
-
-function restoreFood(country, id) {
-  hiddenFoods[country] = (hiddenFoods[country] || []).filter(x => x !== id);
-  localStorage.setItem('ketoHidden', JSON.stringify(hiddenFoods));
-  if (country === currentCountry) renderFoods();
-  updateHiddenFoodsUI();
-  toast('Hersteld ✓');
-}
-
-function updateHiddenFoodsUI() {
-  const card = document.getElementById('hiddenFoodsCard');
-  const list = document.getElementById('hiddenFoodsList');
-  if (!isPro) { card.style.display = 'none'; return; }
-  const hidden = hiddenFoods[currentCountry] || [];
-  if (!hidden.length) { card.style.display = 'none'; return; }
-  card.style.display = 'block';
-  list.innerHTML = hidden.map(id => {
-    const f = (BASE_FOODS[currentCountry] || []).find(x => x.id === id);
-    const name = f ? f.name : id;
-    return '<span class="chip">' + name + '<button class="chip-x" onclick="restoreFood(\'' + currentCountry + '\',\'' + id + '\')">↺</button></span>';
-  }).join('');
-}
-
-function addCustomFood() {
-  const name = document.getElementById('customName').value.trim();
-  if (!name) { toast('Vul een naam in'); return; }
-
-  const customs = customFoods[currentCountry] || [];
-  if (!isPro && customs.length >= 3) {
-    toast('Free versie: max 3 eigen gerechten. Upgrade naar Pro voor onbeperkt.');
-    return;
-  }
-
-  const portions = [];
-  for (let i = 1; i <= 4; i++) {
-    const label = document.getElementById('p' + i + 'label').value.trim() || ('Portie ' + i);
-    const carbs = parseInt(document.getElementById('p' + i + 'carbs').value) || 0;
-    portions.push({label: label, carbs: carbs});
-  }
-
-  const id = 'custom_' + Date.now();
-  customs.push({id: id, name: name, portions: portions});
-  customFoods[currentCountry] = customs;
-  localStorage.setItem('ketoCustom', JSON.stringify(customFoods));
-
-  // clear form
-  document.getElementById('customName').value = '';
-  for (let i = 1; i <= 4; i++) {
-    document.getElementById('p' + i + 'label').value = '';
-    document.getElementById('p' + i + 'carbs').value = '';
-  }
-
-  renderAllFoods();
-  updateCustomLimitMsg();
-  toast('Gerecht toegevoegd ✓');
-}
-
-function removeCustom(id) {
-  if (!confirm('Gerecht verwijderen?')) return;
-  customFoods[currentCountry] = (customFoods[currentCountry] || []).filter(f => f.id !== id);
-  localStorage.setItem('ketoCustom', JSON.stringify(customFoods));
-  delete values[id];
-  renderAllFoods();
-  calculate();
-  updateCustomLimitMsg();
-}
-
-function updateCustomLimitMsg() {
-  const el = document.getElementById('customLimitMsg');
-  const count = (customFoods[currentCountry] || []).length;
-  if (isPro) {
-    el.textContent = 'Pro: onbeperkt eigen gerechten (' + count + ' toegevoegd)';
-  } else {
-    el.textContent = 'Free: ' + count + ' / 3 eigen gerechten';
-  }
-}
-
-function updateCountrySelect() {
-  const select = document.getElementById('countrySelect');
-  select.innerHTML = '';
-  const countries = [{v:'ba',n:'🇧🇦 Bosnië'},{v:'nl',n:'🇳🇱 Nederland'}];
-  countries.forEach(c => {
-    if (isPro || c.v === currentCountry) {
-      const opt = document.createElement('option');
-      opt.value = c.v;
-      opt.textContent = c.n;
-      if (c.v === currentCountry) opt.selected = true;
-      select.appendChild(opt);
-    }
-  });
-  if (!isPro) {
-    const opt = document.createElement('option');
-    opt.disabled = true;
-    opt.textContent = '— Andere landen = Pro —';
-    select.appendChild(opt);
-  }
-}
-
-function updateProUI() {
-  const badge = document.getElementById('proCountryBadge');
-  const desc = document.getElementById('proDesc');
-  const exportBtn = document.getElementById('exportBtn');
-  if (isPro) {
-    badge.innerHTML = '<span class="pro-badge">PRO</span>';
-    desc.textContent = 'Pro actief: alle landen, onbeperkt log + eigen gerechten.';
-    if (exportBtn) exportBtn.style.display = 'block';
-  } else {
-    badge.innerHTML = '';
-    desc.innerHTML = 'Free: 1 land + 3 dagen log + max 3 eigen gerechten.';
-    if (exportBtn) exportBtn.style.display = 'none';
-  }
-  updateCustomLimitMsg();
-}
-
-function changeCountry() {
-  if (!isPro) {
-    const select = document.getElementById('countrySelect');
-    if (select.value !== currentCountry) {
-      toast('Andere landen alleen in Pro.');
-      select.value = currentCountry;
-      return;
-    }
-  }
-  currentCountry = document.getElementById('countrySelect').value;
-  localStorage.setItem('ketoCountry', currentCountry);
-  values = {};
-  document.getElementById('foodSearch').value = '';
-  renderAllFoods();
-  calculate();
-  updateHiddenFoodsUI();
-  document.getElementById('appTitle').textContent = currentCountry === 'ba' ? '🇧🇦 Visual Keto Log' : '🇳🇱 Visual Keto Log';
-  updateCustomLimitMsg();
-}
-
-function sumValues(obj) {
-  return Object.keys(obj).reduce((s, k) => s + (obj[k] || 0), 0);
-}
-
-// Average grams per day over the last 7 days. Ketosis depends on what you eat
-// on a given day, so the gauge needs a daily figure — a 7-day sum would push a
-// perfectly on-target week (7 x 30g = 210g) straight into "out of ketosis".
-function getRecentDailyAverage(pendingMeal) {
-  const log = readLog();
-  const cutoff = daysAgoStr(6);
+function computeStreak(){
   const byDay = {};
-  log.forEach(e => { if (e.date >= cutoff) byDay[e.date] = (byDay[e.date] || 0) + (e.total || 0); });
-  const today = dateStr();
-  byDay[today] = (byDay[today] || 0) + (pendingMeal || 0);
-
-  const dayCount = Object.keys(byDay).length;
-  if (!dayCount) return 0;
-  const total = Object.keys(byDay).reduce((s, d) => s + byDay[d], 0);
-  return Math.round(total / dayCount);
-}
-
-function getTodayLoggedTotal() {
-  const today = dateStr();
-  return readLog().filter(e => e.date === today).reduce((s,e) => s + (e.total||0), 0);
-}
-
-function computeStreak() {
-  const byDay = {};
-  readLog().forEach(e => { byDay[e.date] = (byDay[e.date] || 0) + (e.total || 0); });
+  readLog().forEach(e => { byDay[e.date] = (byDay[e.date]||0) + (e.total||0); });
   let streak = 0;
   const d = new Date();
-  // A day that isn't logged yet shouldn't break the streak — start at yesterday.
-  if (byDay[dateStr(d)] === undefined) d.setDate(d.getDate() - 1);
-  for (;;) {
+  // Today not logged yet shouldn't break a streak — start counting at yesterday.
+  if (byDay[dateStr(d)] === undefined) d.setDate(d.getDate()-1);
+  for(;;){
     const ds = dateStr(d);
-    if (byDay[ds] === undefined) break;
-    if (byDay[ds] > carbGoal) break;
-    streak++;
-    d.setDate(d.getDate() - 1);
+    if (byDay[ds] === undefined || byDay[ds] > carbGoal) break;
+    streak++; d.setDate(d.getDate()-1);
   }
   return streak;
 }
 
-function updateStreakBadge() {
-  document.getElementById('streakBadge').textContent = '🔥 ' + computeStreak();
+/* ============================================================
+   Today
+   ============================================================ */
+function greetingText(){
+  const h = new Date().getHours();
+  if (h < 6)  return 'Goedenacht';
+  if (h < 12) return 'Goedemorgen';
+  if (h < 18) return 'Goedemiddag';
+  return 'Goedenavond';
 }
 
-function updateActionBarVisibility() {
-  const bar = document.getElementById('actionBar');
-  const mealTotal = sumValues(values);
-  if (mealTotal > 0) bar.classList.remove('hidden');
-  else bar.classList.add('hidden');
+function renderToday(){
+  const pending = sumValues(values);
+  const logged  = todayLogged();
+  const total   = logged + pending;
+  const left    = carbGoal - total;
+  const pct     = Math.min(total / carbGoal, 1);
+
+  const ring = $('ringFill');
+  ring.style.strokeDasharray  = RING_CIRC.toFixed(2);
+  ring.style.strokeDashoffset = (RING_CIRC * (1 - pct)).toFixed(2);
+  ring.classList.toggle('warn', total > carbGoal*0.75 && total <= carbGoal);
+  ring.classList.toggle('over', total > carbGoal);
+
+  $('ringNum').textContent  = total;
+  $('ringUnit').textContent = 'van ' + carbGoal + 'g';
+
+  const avg = dailyAverage(pending), st = ketosisState(avg);
+  const status = $('heroStatus');
+  status.textContent = st.txt;
+  status.className = 'hero-status ' + st.cls;
+
+  let msg;
+  if (left > 0)       msg = 'Je hebt nog <b>' + left + 'g</b> te gaan vandaag.';
+  else if (left === 0) msg = 'Je zit precies op je doel.';
+  else                msg = 'Je zit <b>' + (-left) + 'g</b> boven je doel. Morgen weer een kans.';
+  msg += '<br>Gemiddeld ' + avg + 'g per dag deze week.';
+  $('heroMsg').innerHTML = msg;
+
+  $('greeting').textContent = greetingText();
+  $('todayDate').textContent = new Date().toLocaleDateString('nl-NL',{weekday:'long', day:'numeric', month:'long'});
+
+  const streak = computeStreak();
+  $('streakNum').textContent = streak;
+  $('streak').classList.toggle('lit', streak > 0);
+
+  renderQuick();
+  renderTodayMeals();
 }
 
-function calculate() {
-  const mealTotal = sumValues(values);
-  const todayTotal = getTodayLoggedTotal() + mealTotal;
-  const avg = getRecentDailyAverage(mealTotal);
+// The meals you log most often, offered as one tap. This is the single
+// biggest friction saver for the breakfast you eat five days a week.
+function favourites(){
+  const log = readLog().filter(e => e.country === currentCountry && e.items && Object.keys(e.items).length);
+  const seen = {};
+  log.forEach(e => {
+    const ids = Object.keys(e.items).filter(k => e.items[k] > 0).sort();
+    if (!ids.length) return;
+    const sig = ids.map(k => k + ':' + e.items[k]).join('|');
+    if (!seen[sig]) seen[sig] = {count:0, items:{}, total:e.total, ids:ids};
+    seen[sig].count++;
+    seen[sig].items = e.items;
+  });
+  return Object.keys(seen)
+    .map(k => seen[k])
+    .filter(x => x.count >= 2)                     // only real habits
+    .filter(x => x.ids.every(id => !!getFood(id))) // dish must still exist
+    .sort((a,b) => b.count - a.count)
+    .slice(0,3);
+}
 
-  document.getElementById('total').textContent = mealTotal + 'g';
+function renderQuick(){
+  const favs = favourites();
+  $('quickWrap').style.display = favs.length ? 'block' : 'none';
+  if (!favs.length) return;
+  $('quickList').innerHTML = favs.map((f,i) => {
+    const names = f.ids.map(id => foodLabel(id)).join(' + ');
+    return '<button class="quick-btn" data-fav="'+i+'">' +
+      '<span class="quick-icon" aria-hidden="true">⚡</span>' +
+      '<span class="quick-body">' +
+        '<span class="quick-name">'+esc(names)+'</span>' +
+        '<span class="quick-meta">'+f.total+'g · '+f.count+'× gelogd</span>' +
+      '</span>' +
+      '<span class="quick-add" aria-hidden="true">Log</span>' +
+    '</button>';
+  }).join('');
+  window.__favs = favs;
+}
 
-  // Scale runs 0–120g/day; the bar's colour stops sit at 20%/50%/80% of that,
-  // i.e. the 24g / 60g / 96g boundaries used below.
-  document.getElementById('ketosisMarker').style.left = Math.min(avg / 120 * 100, 100) + '%';
-  document.getElementById('recentInfo').textContent = 'Gemiddeld ' + avg + 'g per dag (laatste 7 dagen)';
+function renderTodayMeals(){
+  const t = dateStr();
+  const meals = readLog().filter(e => e.date === t);
+  const host = $('todayMeals');
+  if (!meals.length){
+    host.innerHTML = '<div class="empty"><span class="big">🍽️</span>Nog niets gelogd vandaag.<br>Tik op <b>Loggen</b> om te beginnen.</div>';
+    return;
+  }
+  host.innerHTML = meals.map(e => entryHTML(e)).join('');
+}
 
-  const status = document.getElementById('ketosisStatus');
-  if (avg <= 25) { status.textContent = '🥑 Diep in ketose'; status.style.color = 'var(--green)'; }
-  else if (avg <= 50) { status.textContent = '🙂 Milde ketose mogelijk'; status.style.color = 'var(--yellow)'; }
-  else if (avg <= 100) { status.textContent = '⚠️ Waarschijnlijk uit ketose'; status.style.color = 'var(--orange)'; }
-  else { status.textContent = '🚫 Duidelijk uit ketose'; status.style.color = 'var(--red)'; }
+/* ============================================================
+   Food list (the tracker)
+   ============================================================ */
+function renderFoods(){
+  const host = $('foodList');
+  const term = ($('search').value || '').toLowerCase().trim();
+  const hidden = hiddenFoods[currentCountry] || [];
 
-  document.getElementById('goalText').textContent = todayTotal + ' / ' + carbGoal + 'g';
-  const goalFill = document.getElementById('goalFill');
-  goalFill.style.width = Math.min(todayTotal / carbGoal * 100, 100) + '%';
-  goalFill.style.background = todayTotal <= carbGoal * 0.7 ? 'var(--green)' : todayTotal <= carbGoal ? 'var(--yellow)' : 'var(--red)';
-
-  const left = carbGoal - todayTotal;
-  const budget = document.getElementById('budgetInfo');
-  if (left >= 0) {
-    budget.textContent = 'Nog ' + left + 'g te gaan vandaag';
-    budget.style.color = 'var(--muted)';
-  } else {
-    budget.textContent = (-left) + 'g over je doel vandaag';
-    budget.style.color = 'var(--red)';
+  let foods = getAllFoods().filter(f => hidden.indexOf(f.id) === -1);
+  if (term){
+    foods = foods.filter(f =>
+      f.name.toLowerCase().indexOf(term) !== -1 ||
+      (f.desc||'').toLowerCase().indexOf(term) !== -1);
   }
 
-  updateSelectedChips();
-  updateActionBarVisibility();
+  if (!foods.length){
+    host.innerHTML = '<div class="empty"><span class="big">🔍</span>Niets gevonden' +
+      (term ? ' voor “'+esc(term)+'”' : '') + '.<br>Voeg je eigen gerecht toe bij <b>Meer</b>.</div>';
+    return;
+  }
+
+  host.innerHTML = foods.map(f => {
+    const picked = values[f.id] > 0;
+    // 0g portions are dropped: tapping an active portion deselects it, so a
+    // "Niet" button is dead weight and shrinks the remaining targets.
+    const ps = f.portions.filter(p => p.carbs > 0);
+    const btns = ps.map(p =>
+      '<button class="portion" role="button" aria-pressed="'+(values[f.id] === p.carbs)+'" ' +
+        'data-food="'+esc(f.id)+'" data-carbs="'+p.carbs+'" ' +
+        'aria-label="'+esc(f.name+', '+p.label+', '+p.carbs+' gram')+'">' +
+        '<span class="lbl">'+esc(p.label)+'</span><span class="g">'+p.carbs+'g</span>' +
+      '</button>').join('');
+    return '<section class="food'+(picked ? ' picked' : '')+'">' +
+      '<div class="food-head">' +
+        '<div>' +
+          '<div class="food-name">'+(f.emoji ? f.emoji+' ' : '')+esc(f.name)+
+            (f.custom ? ' <span class="food-own">EIGEN</span>' : '')+'</div>' +
+          (f.desc ? '<div class="food-desc">'+esc(f.desc)+'</div>' : '') +
+        '</div>' +
+        (picked ? '<span class="food-tag">'+values[f.id]+'g</span>' : '') +
+      '</div>' +
+      '<div class="portions'+(ps.length === 4 ? ' four' : '')+'">'+btns+'</div>' +
+    '</section>';
+  }).join('');
 }
 
-function logMeal() {
-  const total = sumValues(values);
-  if (total === 0) { toast('Nog niets geselecteerd'); return; }
+function pickPortion(foodId, carbs){
+  // Tapping the active portion clears it — no separate "none" button needed.
+  if (values[foodId] === carbs) delete values[foodId];
+  else values[foodId] = carbs;
+  renderFoods();
+  refreshPending();
+  renderToday();
+}
 
-  // Only keep the portions that were actually eaten, so the logbook can show
-  // what a meal consisted of without listing every food at 0g.
+function refreshPending(){
+  const total = sumValues(values);
+  const bar = $('pending');
+  bar.classList.toggle('show', total > 0);
+  $('pendingTotal').textContent = total + 'g';
+  $('pendingItems').textContent = Object.keys(values)
+    .filter(k => values[k] > 0)
+    .map(k => foodLabel(k) + ' ' + values[k] + 'g')
+    .join(' · ');
+}
+
+/* ============================================================
+   Logging
+   ============================================================ */
+function saveMeal(){
+  const total = sumValues(values);
+  if (!total){ toast('Kies eerst een portie'); return; }
+
   const items = {};
   Object.keys(values).forEach(k => { if (values[k] > 0) items[k] = values[k]; });
 
   const entry = {
-    id: 'e' + Date.now() + Math.random().toString(36).slice(2,7),
+    id:'e' + Date.now() + Math.random().toString(36).slice(2,7),
     date: dateStr(),
     time: new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),
     total: total,
     items: items,
-    note: document.getElementById('mealNote').value.trim(),
+    note: $('note').value.trim(),
     country: currentCountry
   };
 
-  let log = readLog();
-  log.unshift(entry);
-  writeLog(log);
+  const log = readLog(); log.unshift(entry); writeLog(log);
 
-  const stayedOnTrack = getTodayLoggedTotal() <= carbGoal;
+  const onTrack = todayLogged() <= carbGoal;
   const restore = Object.assign({}, values);
   const restoreNote = entry.note;
 
-  document.getElementById('mealNote').value = '';
+  $('note').value = '';
   values = {};
-  renderAllFoods();
-  loadLog();
-  calculate();
-  updateStreakBadge();
+  renderFoods(); refreshPending(); renderToday(); renderHistory();
 
-  const undo = {
-    label: 'Ongedaan',
-    fn: function() {
-      writeLog(readLog().filter(e => e.id !== entry.id));
-      values = restore;
-      document.getElementById('mealNote').value = restoreNote;
-      renderAllFoods();
-      loadLog();
-      calculate();
-      updateStreakBadge();
-      toast('Teruggezet');
-    }
-  };
+  const undo = {label:'Ongedaan', fn: () => {
+    writeLog(readLog().filter(e => e.id !== entry.id));
+    values = restore;
+    $('note').value = restoreNote;
+    renderFoods(); refreshPending(); renderToday(); renderHistory();
+    toast('Teruggezet');
+  }};
 
-  if (stayedOnTrack) {
-    confetti();
-    toast('Gelogd ✓ (' + total + 'g) — mooi op koers 🎉', undo);
-  } else {
-    toast('Gelogd ✓ (' + total + 'g)', undo);
-  }
+  if (onTrack){ confetti(); toast('Gelogd · ' + total + 'g — mooi op koers', undo); }
+  else toast('Gelogd · ' + total + 'g', undo);
+
+  switchTab('today');
 }
 
-function deleteLogEntry(id) {
+function deleteEntry(id){
   const log = readLog();
   const entry = log.find(e => e.id === id);
   if (!entry) return;
   writeLog(log.filter(e => e.id !== id));
-  loadLog();
-  calculate();
-  updateStreakBadge();
-  toast('Verwijderd', {
-    label: 'Ongedaan',
-    fn: function() {
-      const back = readLog();
-      back.unshift(entry);
-      back.sort((a,b) => (b.date + b.time).localeCompare(a.date + a.time));
-      writeLog(back);
-      loadLog();
-      calculate();
-      updateStreakBadge();
-    }
-  });
+  renderToday(); renderHistory();
+  toast('Verwijderd', {label:'Ongedaan', fn: () => {
+    const back = readLog();
+    back.unshift(entry);
+    back.sort((a,b) => (b.date + (b.time||'')).localeCompare(a.date + (a.time||'')));
+    writeLog(back);
+    renderToday(); renderHistory();
+  }});
 }
 
-// One-tap re-log of an earlier meal — the single biggest friction saver for
-// the breakfast/lunch you eat most days.
-function repeatMeal(id) {
+function repeatEntry(id){
   const entry = readLog().find(e => e.id === id);
   if (!entry) return;
+  loadItems(entry.items, entry.country);
+}
 
-  if (entry.country && entry.country !== currentCountry) {
-    toast('Die maaltijd hoort bij een ander land');
-    return;
-  }
-
-  const known = {};
-  getAllFoods().forEach(f => { known[f.id] = true; });
+function loadItems(items, country){
+  if (country && country !== currentCountry){ toast('Die maaltijd hoort bij een ander land'); return; }
   let missing = 0;
   values = {};
-  Object.keys(entry.items || {}).forEach(k => {
-    if (known[k]) values[k] = entry.items[k];
+  Object.keys(items || {}).forEach(k => {
+    if (getFood(k)) values[k] = items[k];
     else missing++;
   });
-
-  if (!Object.keys(values).length) {
-    toast('Die gerechten bestaan niet meer');
-    return;
-  }
-
-  document.querySelector('.nav-btn[data-tab="tracker"]').click();
-  renderAllFoods();
-  calculate();
-  window.scrollTo(0, 0);
-  toast(missing ? 'Overgenomen (' + missing + ' gerecht niet meer beschikbaar)' : 'Overgenomen — tik op Loggen');
+  if (!Object.keys(values).length){ toast('Die gerechten bestaan niet meer'); return; }
+  switchTab('log');
+  renderFoods(); refreshPending(); renderToday();
+  window.scrollTo({top:0, behavior:'smooth'});
+  toast(missing ? 'Overgenomen — 1 gerecht bestaat niet meer' : 'Overgenomen — tik op Loggen');
 }
 
-function esc(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* ============================================================
+   History
+   ============================================================ */
+function dayName(ds){
+  if (ds === dateStr())      return 'Vandaag';
+  if (ds === daysAgoStr(1))  return 'Gisteren';
+  const p = ds.split('-');
+  return new Date(+p[0], +p[1]-1, +p[2]).toLocaleDateString('nl-NL',{weekday:'long', day:'numeric', month:'short'});
 }
 
-function dayLabel(ds) {
-  if (ds === dateStr()) return 'Vandaag';
-  if (ds === daysAgoStr(1)) return 'Gisteren';
-  const parts = ds.split('-');
-  const d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
-  return d.toLocaleDateString('nl-NL', {weekday:'long', day:'numeric', month:'short'});
+function entryHTML(e){
+  const items = Object.keys(e.items || {})
+    .filter(k => e.items[k] > 0)
+    .map(k => esc(foodLabel(k)) + ' ' + e.items[k] + 'g')
+    .join(' · ');
+  // Entries written before v4 have no id and can't be targeted safely.
+  const actions = e.id
+    ? '<button class="iconbtn" data-repeat="'+e.id+'" aria-label="Nogmaals loggen" title="Nogmaals loggen">↻</button>' +
+      '<button class="iconbtn" data-del="'+e.id+'" aria-label="Verwijderen" title="Verwijderen">🗑</button>'
+    : '';
+  return '<article class="entry">' +
+      '<div class="entry-top">' +
+        '<span class="entry-time">'+esc(e.time||'')+'</span>' +
+        '<span class="entry-total">'+e.total+'g</span>' + actions +
+      '</div>' +
+      (items ? '<div class="entry-items">'+items+'</div>' : '') +
+      (e.note ? '<div class="entry-note">“'+esc(e.note)+'”</div>' : '') +
+    '</article>';
 }
 
-function loadLog() {
-  renderWeekChart();
+function renderHistory(){
+  renderWeek();
+  $('logNotice').innerHTML = isPro ? '' :
+    '<div class="notice">Free toont de laatste 3 dagen. Met Pro bewaar je alles — je oude dagen blijven bewaard en komen terug zodra je Pro aanzet.</div>';
+  $('exportBtn').style.display = isPro ? 'flex' : 'none';
 
-  const list = document.getElementById('logList');
   const log = visibleLog(readLog());
-
-  if (!log.length) {
-    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px 16px;font-size:12px">Nog niets gelogd.<br>Kies een gerecht op het Tracker-tabblad.</div>';
+  const host = $('historyList');
+  if (!log.length){
+    host.innerHTML = '<div class="empty"><span class="big">📊</span>Nog niets gelogd.<br>Zodra je logt zie je hier je dagen terug.</div>';
     return;
   }
-
-  // Group by day, newest day first, so a day total is visible at a glance.
-  const days = [];
-  const byDay = {};
-  log.forEach(e => {
-    if (!byDay[e.date]) { byDay[e.date] = []; days.push(e.date); }
-    byDay[e.date].push(e);
-  });
+  const byDay = {}, days = [];
+  log.forEach(e => { if (!byDay[e.date]){ byDay[e.date] = []; days.push(e.date); } byDay[e.date].push(e); });
   days.sort().reverse();
 
-  list.innerHTML = days.map(ds => {
-    const entries = byDay[ds];
-    const dayTotal = entries.reduce((s, e) => s + (e.total || 0), 0);
-    const cls = dayTotal <= carbGoal ? 'ok' : 'over';
+  host.innerHTML = days.map(ds => {
+    const es = byDay[ds];
+    const tot = es.reduce((s,e) => s + (e.total||0), 0);
+    return '<section class="day">' +
+      '<div class="day-head">' +
+        '<span class="day-name">'+esc(dayName(ds))+'</span>' +
+        '<span class="day-sum'+(tot > carbGoal ? ' over' : '')+'">'+tot+' / '+carbGoal+'g</span>' +
+      '</div>' + es.map(entryHTML).join('') +
+    '</section>';
+  }).join('');
+}
 
-    const rows = entries.map(e => {
-      const items = Object.keys(e.items || {})
-        .filter(k => e.items[k] > 0)
-        .map(k => esc(getFoodName(k)) + ' ' + e.items[k] + 'g')
-        .join(' · ');
-      // Entries logged before this version have no id and cannot be targeted.
-      const actions = e.id
-        ? '<button class="icon-btn" onclick="repeatMeal(\'' + e.id + '\')" title="Nogmaals loggen">↻</button>' +
-          '<button class="icon-btn" onclick="deleteLogEntry(\'' + e.id + '\')" title="Verwijderen">🗑</button>'
-        : '';
-      return '<div class="log-entry">' +
-        '<div class="log-top">' +
-          '<span class="log-time">' + esc(e.time || '') + '</span>' +
-          '<span class="log-total">' + e.total + 'g</span>' +
-          actions +
-        '</div>' +
-        (items ? '<div class="log-items">' + items + '</div>' : '') +
-        (e.note ? '<div class="log-note">“' + esc(e.note) + '”</div>' : '') +
-      '</div>';
+function renderWeek(){
+  const byDay = {};
+  visibleLog(readLog()).forEach(e => { byDay[e.date] = (byDay[e.date]||0) + (e.total||0); });
+
+  const days = [];
+  for (let i=6;i>=0;i--){ const ds = daysAgoStr(i); days.push({ds:ds, total:byDay[ds], now:i===0}); }
+  const max = Math.max(carbGoal*1.4, ...days.map(d => d.total||0), 1);
+
+  $('weekBars').innerHTML =
+    '<div class="goal-line" style="bottom:'+(carbGoal/max*100)+'%"><span>'+carbGoal+'g</span></div>' +
+    days.map(d => {
+      const has = d.total !== undefined, v = d.total || 0;
+      const h = has ? Math.max(v/max*100, 4) : 4;
+      const cls = !has ? 'none' : (v <= carbGoal ? '' : 'over');
+      return '<div class="wcol"><span class="wval">'+(has ? v : '')+'</span>' +
+             '<div class="wbar '+cls+'" style="height:'+h+'%"></div></div>';
     }).join('');
 
-    return '<div class="day-group">' +
-      '<div class="day-head">' +
-        '<span class="day-title">' + esc(dayLabel(ds)) + '</span>' +
-        '<span class="day-total ' + cls + '">' + dayTotal + ' / ' + carbGoal + 'g</span>' +
-      '</div>' + rows +
+  $('weekLabels').innerHTML = days.map(d => {
+    const p = d.ds.split('-');
+    const nm = new Date(+p[0], +p[1]-1, +p[2]).toLocaleDateString('nl-NL',{weekday:'short'}).replace('.','').slice(0,2);
+    return '<span class="'+(d.now ? 'now' : '')+'">'+nm+'</span>';
+  }).join('');
+
+  const logged = days.filter(d => d.total !== undefined);
+  const ok = logged.filter(d => d.total <= carbGoal).length;
+  $('weekSummary').textContent = logged.length
+    ? ok + ' van ' + logged.length + ' gelogde dagen binnen je doel'
+    : 'Nog geen dagen gelogd';
+}
+
+function exportLog(){
+  if (!isPro){ toast('Exporteren zit in Pro'); return; }
+  const log = readLog();
+  if (!log.length){ toast('Nog niets te exporteren'); return; }
+  const rows = [['datum','tijd','koolhydraten_g','gerechten','notitie']];
+  log.slice().sort((a,b) => (a.date+(a.time||'')).localeCompare(b.date+(b.time||''))).forEach(e => {
+    const items = Object.keys(e.items||{}).filter(k => e.items[k] > 0)
+      .map(k => foodLabel(k) + ' ' + e.items[k] + 'g').join('; ');
+    rows.push([e.date, e.time||'', e.total, items, e.note||'']);
+  });
+  const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'}));
+  a.download = 'keto-log-' + dateStr() + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Geëxporteerd');
+}
+
+/* ============================================================
+   Settings
+   ============================================================ */
+// Visibility lives here, behind explicit switches, instead of a tiny "−" in
+// the food row where a thumb reaching for the card hits it by accident.
+function renderVisibility(){
+  const host = $('visibilityRows');
+  const hidden = hiddenFoods[currentCountry] || [];
+  const foods = getAllFoods();
+  host.innerHTML = foods.map(f => {
+    const on = hidden.indexOf(f.id) === -1;
+    const own = f.custom
+      ? '<button class="iconbtn" data-rmcustom="'+esc(f.id)+'" aria-label="Eigen gerecht verwijderen" title="Verwijderen">🗑</button>'
+      : '';
+    return '<div class="row">' +
+      '<div class="row-label"><b>'+(f.emoji ? f.emoji+' ' : '')+esc(f.name)+'</b>' +
+        '<small>'+(f.custom ? 'Eigen gerecht' : esc(f.desc||''))+'</small></div>' + own +
+      '<button class="switch" role="switch" aria-checked="'+on+'" data-vis="'+esc(f.id)+'" ' +
+        'aria-label="'+esc(f.name)+' tonen in de lijst"></button>' +
     '</div>';
   }).join('');
 }
 
-function renderWeekChart() {
-  const chart = document.getElementById('weekChart');
-  const labels = document.getElementById('weekLabels');
-  if (!chart) return;
+function toggleVisible(id){
+  const arr = hiddenFoods[currentCountry] || (hiddenFoods[currentCountry] = []);
+  const i = arr.indexOf(id);
+  if (i === -1){ arr.push(id); delete values[id]; }
+  else arr.splice(i,1);
+  localStorage.setItem('ketoHidden', JSON.stringify(hiddenFoods));
+  renderVisibility(); renderFoods(); refreshPending(); renderToday();
+}
 
-  const byDay = {};
-  visibleLog(readLog()).forEach(e => { byDay[e.date] = (byDay[e.date] || 0) + (e.total || 0); });
+function addCustom(){
+  const name = $('cName').value.trim();
+  if (!name){ toast('Vul een naam in'); $('cName').focus(); return; }
+  const list = customFoods[currentCountry] || (customFoods[currentCountry] = []);
+  if (!isPro && list.length >= 3){ toast('Free: maximaal 3 eigen gerechten'); return; }
 
-  const days = [];
-  for (let i = 6; i >= 0; i--) {
-    const ds = daysAgoStr(i);
-    days.push({ds: ds, total: byDay[ds], today: i === 0});
+  const portions = [];
+  for (let i=1;i<=3;i++){
+    const g = parseInt($('cG'+i).value, 10);
+    if (!g || g <= 0) continue;
+    portions.push({label: $('cL'+i).value.trim() || ('Portie '+i), carbs: g});
   }
+  if (!portions.length){ toast('Vul minstens één portie met grammen in'); $('cG1').focus(); return; }
 
-  const max = Math.max(carbGoal * 1.4, ...days.map(d => d.total || 0), 1);
+  list.push({id:'custom_'+Date.now(), name:name, emoji:'🍽️', desc:'', custom:true, portions:portions});
+  localStorage.setItem('ketoCustom', JSON.stringify(customFoods));
 
-  chart.innerHTML = '<div class="goal-line" style="bottom:' + (carbGoal / max * 100) + '%"><span>' + carbGoal + 'g</span></div>' +
-    days.map(d => {
-      const logged = d.total !== undefined;
-      const val = d.total || 0;
-      const h = logged ? Math.max(val / max * 100, 3) : 3;
-      const cls = !logged ? 'empty' : (val <= carbGoal ? '' : 'over');
-      return '<div class="week-col">' +
-        '<span class="week-val">' + (logged ? val : '') + '</span>' +
-        '<div class="week-bar ' + cls + '" style="height:' + h + '%"></div>' +
-      '</div>';
-    }).join('');
-
-  labels.innerHTML = days.map(d => {
-    const parts = d.ds.split('-');
-    const dt = new Date(+parts[0], +parts[1] - 1, +parts[2]);
-    const nm = dt.toLocaleDateString('nl-NL', {weekday:'short'}).replace('.','').slice(0,2);
-    return '<span class="' + (d.today ? 'today' : '') + '">' + nm + '</span>';
-  }).join('');
-
-  const loggedDays = days.filter(d => d.total !== undefined);
-  const onTrack = loggedDays.filter(d => d.total <= carbGoal).length;
-  const summary = document.getElementById('weekSummary');
-  summary.textContent = loggedDays.length
-    ? onTrack + ' van ' + loggedDays.length + ' gelogde dagen binnen je doel'
-    : 'Nog geen dagen gelogd';
+  $('cName').value = '';
+  for (let i=1;i<=3;i++){ $('cL'+i).value = ''; $('cG'+i).value = ''; }
+  renderFoods(); renderVisibility(); updateProText();
+  toast(name + ' toegevoegd');
 }
 
-function updateLogLimitMsg() {
-  const el = document.getElementById('logLimitMsg');
-  if (!isPro) el.innerHTML = '<div class="lock-msg">Free: alleen laatste 3 dagen. Pro = onbeperkt.</div>';
-  else el.innerHTML = '';
+function removeCustom(id){
+  const f = getFood(id);
+  const list = customFoods[currentCountry] || [];
+  customFoods[currentCountry] = list.filter(x => x.id !== id);
+  localStorage.setItem('ketoCustom', JSON.stringify(customFoods));
+  delete values[id];
+  renderFoods(); renderVisibility(); refreshPending(); renderToday(); updateProText();
+  toast((f ? f.name : 'Gerecht') + ' verwijderd', {label:'Ongedaan', fn: () => {
+    if (f){ (customFoods[currentCountry] = customFoods[currentCountry] || []).push(f);
+            localStorage.setItem('ketoCustom', JSON.stringify(customFoods));
+            renderFoods(); renderVisibility(); updateProText(); }
+  }});
 }
 
-function exportLog() {
-  if (!isPro) { toast('Export alleen in Pro'); return; }
-  const log = readLog();
-  if (!log.length) { toast('Geen logs'); return; }
+function updateProText(){
+  const n = (customFoods[currentCountry]||[]).length;
+  $('proText').textContent = isPro
+    ? 'Pro is actief: alle landen, volledige historie, CSV-export en onbeperkt eigen gerechten (' + n + ' toegevoegd).'
+    : 'Free: één land, laatste 3 dagen historie en maximaal 3 eigen gerechten (' + n + ' van 3 gebruikt).';
+  $('customHint').textContent = isPro
+    ? 'Onbeperkt eigen gerechten.'
+    : n + ' van 3 eigen gerechten gebruikt.';
+  $('countryHint').textContent = isPro ? 'Bepaalt welke gerechten je ziet' : 'Meerdere landen zit in Pro';
+}
 
-  // CSV so it opens straight into Excel/Sheets, or goes to a dietitian as-is.
-  const rows = [['datum','tijd','koolhydraten_g','gerechten','notitie']];
-  log.slice().sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time)).forEach(e => {
-    const items = Object.keys(e.items || {})
-      .filter(k => e.items[k] > 0)
-      .map(k => getFoodName(k) + ' ' + e.items[k] + 'g')
-      .join('; ');
-    rows.push([e.date, e.time || '', e.total, items, e.note || '']);
+function fillCountries(){
+  const sel = $('country');
+  sel.innerHTML = '';
+  COUNTRIES.forEach(c => {
+    if (!isPro && c.v !== currentCountry) return;
+    const o = document.createElement('option');
+    o.value = c.v; o.textContent = c.n; o.selected = c.v === currentCountry;
+    sel.appendChild(o);
   });
-
-  const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\r\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob(['﻿' + csv],{type:'text/csv;charset=utf-8'}));
-  a.download = 'keto-log-' + dateStr() + '.csv';
-  a.click();
-  URL.revokeObjectURL(a.href);
-  toast('Geëxporteerd ✓');
-}
-
-function resetToday() {
-  values = {};
-  renderAllFoods();
-  calculate();
-}
-
-function updateGoal() {
-  carbGoal = parseInt(document.getElementById('carbGoal').value) || 30;
-  localStorage.setItem('ketoGoal', carbGoal);
-  calculate();
-  updateStreakBadge();
-  loadLog();
-}
-
-function toggleTheme() {
-  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-  if (dark) {
-    document.documentElement.removeAttribute('data-theme');
-    localStorage.setItem('ketoTheme','light');
-  } else {
-    document.documentElement.setAttribute('data-theme','dark');
-    localStorage.setItem('ketoTheme','dark');
+  if (!isPro){
+    const o = document.createElement('option');
+    o.disabled = true; o.textContent = '— meer landen met Pro —';
+    sel.appendChild(o);
   }
 }
 
-function togglePro() {
+function changeCountry(){
+  currentCountry = $('country').value;
+  localStorage.setItem('ketoCountry', currentCountry);
+  values = {};
+  $('search').value = '';
+  renderFoods(); renderVisibility(); refreshPending(); renderToday(); renderHistory(); updateProText();
+}
+
+function setTheme(dark){
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  localStorage.setItem('ketoTheme', dark ? 'dark' : 'light');
+  $('themeSwitch').setAttribute('aria-checked', dark);
+  $('themeRow').setAttribute('aria-checked', dark);
+}
+
+function togglePro(){
   isPro = !isPro;
   localStorage.setItem('ketoPro', isPro ? 'true' : 'false');
-  updateCountrySelect();
-  updateProUI();
-  renderAllFoods();
-  updateHiddenFoodsUI();
-  loadLog();
-  updateLogLimitMsg();
-  toast(isPro ? 'Pro geactiveerd ✓' : 'Pro uitgeschakeld');
+  fillCountries(); updateProText();
+  renderFoods(); renderToday(); renderHistory();
+  toast(isPro ? 'Pro staat aan' : 'Pro staat uit');
 }
 
-function openSupport() {
-  if (SUPPORT_URL && SUPPORT_URL !== 'https://ko-fi.com/') window.open(SUPPORT_URL,'_blank');
-  else toast('Zet jouw betaallink in SUPPORT_URL');
+/* ============================================================
+   Navigation
+   ============================================================ */
+function switchTab(tab){
+  document.querySelectorAll('.nav-btn').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+  document.querySelectorAll('.panel').forEach(p =>
+    p.classList.toggle('active', p.id === 'panel-' + tab));
+  if (tab === 'history') renderHistory();
+  if (tab === 'more'){ renderVisibility(); updateProText(); }
+  if (tab === 'today') renderToday();
 }
 
-function clearAllData() {
-  if (confirm('Alles wissen?')) {
-    localStorage.clear();
-    location.reload();
-  }
+/* ============================================================
+   Init
+   ============================================================ */
+function init(){
+  isPro = localStorage.getItem('ketoPro') === 'true';
+  currentCountry = localStorage.getItem('ketoCountry') || 'ba';
+  carbGoal = parseInt(localStorage.getItem('ketoGoal'), 10) || 30;
+  if (!BASE_FOODS[currentCountry]) currentCountry = 'ba';
+
+  try { customFoods = JSON.parse(localStorage.getItem('ketoCustom') || '{"ba":[],"nl":[]}'); }
+  catch(e){ customFoods = {ba:[], nl:[]}; }
+  try { hiddenFoods = JSON.parse(localStorage.getItem('ketoHidden') || '{"ba":[],"nl":[]}'); }
+  catch(e){ hiddenFoods = {ba:[], nl:[]}; }
+  // Older saves lack the flag the UI uses to mark a dish as your own.
+  Object.keys(customFoods).forEach(c =>
+    (customFoods[c]||[]).forEach(f => { f.custom = true; if (!f.emoji) f.emoji = '🍽️'; }));
+
+  const stored = localStorage.getItem('ketoTheme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  setTheme(stored ? stored === 'dark' : prefersDark);
+
+  $('goalInput').value = carbGoal;
+
+  // --- navigation
+  document.querySelectorAll('.nav-btn').forEach(b =>
+    b.addEventListener('click', () => switchTab(b.dataset.tab)));
+  document.querySelectorAll('[data-goto]').forEach(b =>
+    b.addEventListener('click', () => switchTab(b.dataset.goto)));
+
+  // --- food list (delegated)
+  $('foodList').addEventListener('click', e => {
+    const p = e.target.closest('.portion');
+    if (p) pickPortion(p.dataset.food, parseInt(p.dataset.carbs, 10));
+  });
+  $('search').addEventListener('input', renderFoods);
+
+  // --- pending bar
+  $('saveMeal').addEventListener('click', saveMeal);
+  $('clearPending').addEventListener('click', () => {
+    values = {}; renderFoods(); refreshPending(); renderToday();
+  });
+  $('note').addEventListener('keydown', e => { if (e.key === 'Enter') saveMeal(); });
+
+  // --- quick log
+  $('quickList').addEventListener('click', e => {
+    const b = e.target.closest('[data-fav]');
+    if (!b) return;
+    const f = (window.__favs || [])[+b.dataset.fav];
+    if (f) loadItems(f.items, currentCountry);
+  });
+
+  // --- entries (today + history)
+  document.body.addEventListener('click', e => {
+    const r = e.target.closest('[data-repeat]');
+    if (r){ repeatEntry(r.dataset.repeat); return; }
+    const d = e.target.closest('[data-del]');
+    if (d){ deleteEntry(d.dataset.del); return; }
+    const v = e.target.closest('[data-vis]');
+    if (v){ toggleVisible(v.dataset.vis); return; }
+    const rc = e.target.closest('[data-rmcustom]');
+    if (rc){ removeCustom(rc.dataset.rmcustom); return; }
+  });
+
+  // --- settings
+  $('goalInput').addEventListener('change', () => {
+    let g = parseInt($('goalInput').value, 10);
+    if (!g || g < 10) g = 10;
+    if (g > 150) g = 150;
+    carbGoal = g; $('goalInput').value = g;
+    localStorage.setItem('ketoGoal', g);
+    renderToday(); renderHistory();
+  });
+  $('country').addEventListener('change', () => {
+    if (!isPro && $('country').value !== currentCountry){
+      toast('Meerdere landen zit in Pro');
+      $('country').value = currentCountry;
+      return;
+    }
+    changeCountry();
+  });
+  $('themeRow').addEventListener('click', () =>
+    setTheme(document.documentElement.getAttribute('data-theme') !== 'dark'));
+  $('addCustom').addEventListener('click', addCustom);
+  $('cName').addEventListener('keydown', e => { if (e.key === 'Enter') addCustom(); });
+  $('proToggle').addEventListener('click', togglePro);
+  $('supportBtn').addEventListener('click', () => {
+    if (SUPPORT_URL && SUPPORT_URL !== 'https://ko-fi.com/') window.open(SUPPORT_URL, '_blank', 'noopener');
+    else toast('Zet je eigen betaallink in SUPPORT_URL');
+  });
+  $('exportBtn').addEventListener('click', exportLog);
+  $('wipe').addEventListener('click', () => {
+    if (confirm('Weet je het zeker? Al je gelogde dagen en eigen gerechten worden gewist.')){
+      localStorage.clear();
+      location.reload();
+    }
+  });
+
+  fillCountries();
+  renderFoods();
+  refreshPending();
+  renderToday();
+  renderHistory();
+  renderVisibility();
+  updateProText();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
