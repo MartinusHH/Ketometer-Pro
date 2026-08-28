@@ -237,6 +237,11 @@ input.ps-range::-moz-range-track{height:8px;border-radius:99px;background:transp
 .week-extra .better{color:var(--accent-ink)}
 .week-extra .worse{color:var(--warn)}
 
+.weight-row{display:flex;gap:8px;align-items:flex-end}
+.weight-row .field{flex:1;margin-bottom:0}
+.weight-chart{margin-top:10px}
+.weight-chart svg{width:100%;height:70px;display:block}
+
 .day{margin-bottom:20px}
 .day-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 4px 8px}
 .day-name{font-size:15px;font-weight:800}
@@ -408,6 +413,19 @@ body:has(.pending.show) .toast{bottom:calc(178px + env(safe-area-inset-bottom))}
         <div class="week-extra" id="weekExtra"></div>
       </div>
     </div>
+    <div class="card">
+      <div class="card-title" data-t="weightCardTitle">Weight</div>
+      <p class="card-sub" id="weightSummary" style="margin-bottom:10px"></p>
+      <div class="weight-row">
+        <div class="field">
+          <label for="weightInput" data-t="weightLabel">Today's weight (kg)</label>
+          <input type="number" id="weightInput" step="0.1" min="0" inputmode="decimal" data-t-ph="weightPlaceholder" autocomplete="off">
+        </div>
+        <button class="btn btn-primary" id="logWeightBtn" data-t="logBtn">Log</button>
+      </div>
+      <div id="weightChart" class="weight-chart"></div>
+    </div>
+
     <div id="logNotice"></div>
     <div id="historyList"></div>
     <button class="btn btn-outline btn-block" id="exportBtn" style="margin-top:12px" data-t="exportBtn">Export as CSV</button>
@@ -468,7 +486,7 @@ body:has(.pending.show) .toast{bottom:calc(178px + env(safe-area-inset-bottom))}
     <div class="card">
       <button class="btn btn-danger btn-block" id="wipe" data-t="wipeBtn">Delete all data</button>
     </div>
-    <p class="foot">Visual Keto Log · v5.0<br><span data-t="footerText">Everything stays on your own phone.</span></p>
+    <p class="foot">Visual Keto Log · v5.1<br><span data-t="footerText">Everything stays on your own phone.</span></p>
   </main>
 </div>
 
@@ -558,6 +576,13 @@ const STRINGS = {
     weekBetter:'{p}% lower than last week',
     weekWorse:'{p}% higher than last week',
     bestStreak:'Best streak: {n} days',
+    weightCardTitle:'Weight', weightLabel:'Today\'s weight (kg)', weightPlaceholder:'kg',
+    weightEmpty:'No weight logged yet.',
+    weightSummaryOne:'Latest: {kg} kg',
+    weightSummaryUp:'Latest: {kg} kg · +{diff} kg since {date}',
+    weightSummaryDown:'Latest: {kg} kg · {diff} kg since {date}',
+    weightSummarySame:'Latest: {kg} kg · unchanged since {date}',
+    toastWeightInvalid:'Enter a valid weight', toastWeightLogged:'Weight logged',
     freeNotice:'Free shows the last 3 days. With Pro you keep everything — your older days stay saved and come back the moment you turn Pro on.',
     exportBtn:'Export as CSV',
     emptyHistory:'Nothing logged yet.<br>Once you log something you’ll see your days here.',
@@ -627,6 +652,13 @@ const STRINGS = {
     weekBetter:'{p}% lager dan vorige week',
     weekWorse:'{p}% hoger dan vorige week',
     bestStreak:'Beste streak: {n} dagen',
+    weightCardTitle:'Gewicht', weightLabel:'Gewicht vandaag (kg)', weightPlaceholder:'kg',
+    weightEmpty:'Nog geen gewicht gelogd.',
+    weightSummaryOne:'Laatste: {kg} kg',
+    weightSummaryUp:'Laatste: {kg} kg · +{diff} kg sinds {date}',
+    weightSummaryDown:'Laatste: {kg} kg · {diff} kg sinds {date}',
+    weightSummarySame:'Laatste: {kg} kg · gelijk sinds {date}',
+    toastWeightInvalid:'Vul een geldig gewicht in', toastWeightLogged:'Gewicht gelogd',
     freeNotice:'Free toont de laatste 3 dagen. Met Pro bewaar je alles — je oude dagen blijven bewaard en komen terug zodra je Pro aanzet.',
     exportBtn:'Exporteer als CSV',
     emptyHistory:'Nog niets gelogd.<br>Zodra je logt zie je hier je dagen terug.',
@@ -754,6 +786,7 @@ let isPro = false, currentCountry = 'ba', carbGoal = 30;
 let values = {};                       // pending meal: foodId -> grams
 let customFoods = {ba:[], nl:[]};
 let hiddenFoods = {ba:[], nl:[]};
+let weightLog = [];                    // [{date, kg}], one entry per calendar day
 let ringDisplayed = 0, ringAnimFrame = null;
 const lastIdx = {};                    // per-food slider index, to gate haptics/renders
 
@@ -1322,6 +1355,7 @@ function entryHTML(e){
 
 function renderHistory(){
   renderWeek();
+  renderWeight();
   $('logNotice').innerHTML = isPro ? '' : '<div class="notice">'+esc(t('freeNotice'))+'</div>';
   $('exportBtn').style.display = isPro ? 'flex' : 'none';
 
@@ -1381,6 +1415,60 @@ function renderWeek(){
   const best = parseInt(localStorage.getItem('ketoBestStreak')||'0', 10);
   if (best > 0) extra.push('<span>'+esc(t('bestStreak', {n:best}))+'</span>');
   $('weekExtra').innerHTML = extra.join('');
+}
+
+/* ============================================================
+   Weight — one entry per calendar day, simple SVG trend line.
+   ============================================================ */
+function shortDate(ds){
+  const p = ds.split('-');
+  return new Date(+p[0], +p[1]-1, +p[2]).toLocaleDateString(LOCALE[appLang], {day:'numeric', month:'short'});
+}
+
+function logWeight(){
+  const input = $('weightInput');
+  const val = parseFloat(input.value);
+  if (!val || val <= 0){ toast(t('toastWeightInvalid')); return; }
+  const ds = dateStr();
+  const idx = weightLog.findIndex(w => w.date === ds);
+  if (idx !== -1) weightLog[idx].kg = val; else weightLog.push({date: ds, kg: val});
+  weightLog.sort((a,b) => a.date < b.date ? -1 : 1);
+  localStorage.setItem('ketoWeight', JSON.stringify(weightLog));
+  input.value = '';
+  renderWeight();
+  toast(t('toastWeightLogged'));
+}
+
+function renderWeight(){
+  const chartEl = $('weightChart'), summaryEl = $('weightSummary');
+  if (!weightLog.length){ chartEl.innerHTML = ''; summaryEl.textContent = t('weightEmpty'); return; }
+
+  const recent = weightLog.slice(-30);
+  const weights = recent.map(w => w.kg);
+  const min = Math.min(...weights), max = Math.max(...weights);
+  const range = (max - min) || 1;
+  const W = 280, H = 70, pad = 6;
+  const stepX = recent.length > 1 ? (W - pad*2) / (recent.length - 1) : 0;
+  const points = recent.map((w,i) => {
+    const x = pad + i*stepX, y = H - pad - ((w.kg - min)/range) * (H - pad*2);
+    return x + ',' + y;
+  }).join(' ');
+  const lastX = pad + (recent.length - 1) * stepX;
+  const lastY = H - pad - ((recent[recent.length-1].kg - min)/range) * (H - pad*2);
+
+  chartEl.innerHTML = recent.length > 1
+    ? '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">' +
+        '<polyline points="'+points+'" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<circle cx="'+lastX+'" cy="'+lastY+'" r="4" fill="var(--accent)"/>' +
+      '</svg>'
+    : '';
+
+  const first = recent[0].kg, last = recent[recent.length-1].kg;
+  const diff = +(last - first).toFixed(1);
+  if (recent.length === 1) summaryEl.textContent = t('weightSummaryOne', {kg:last});
+  else if (diff > 0) summaryEl.textContent = t('weightSummaryUp', {kg:last, diff:diff.toFixed(1), date:shortDate(recent[0].date)});
+  else if (diff < 0) summaryEl.textContent = t('weightSummaryDown', {kg:last, diff:diff.toFixed(1), date:shortDate(recent[0].date)});
+  else summaryEl.textContent = t('weightSummarySame', {kg:last, date:shortDate(recent[0].date)});
 }
 
 function exportLog(){
@@ -1592,6 +1680,8 @@ function init(){
   catch(e){ customFoods = {ba:[], nl:[]}; }
   try { hiddenFoods = JSON.parse(localStorage.getItem('ketoHidden') || '{"ba":[],"nl":[]}'); }
   catch(e){ hiddenFoods = {ba:[], nl:[]}; }
+  try { weightLog = JSON.parse(localStorage.getItem('ketoWeight') || '[]'); }
+  catch(e){ weightLog = []; }
   // Older saves lack the flag the UI uses to mark a dish as your own.
   Object.keys(customFoods).forEach(c =>
     (customFoods[c]||[]).forEach(f => { f.custom = true; if (!f.emoji) f.emoji = '🍽️'; }));
@@ -1674,6 +1764,8 @@ function init(){
     else toast('Set your own payment link in SUPPORT_URL');
   });
   $('exportBtn').addEventListener('click', exportLog);
+  $('logWeightBtn').addEventListener('click', logWeight);
+  $('weightInput').addEventListener('keydown', e => { if (e.key === 'Enter') logWeight(); });
   $('wipe').addEventListener('click', () => {
     if (confirm(t('wipeConfirm'))){
       localStorage.clear();
